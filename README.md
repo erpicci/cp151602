@@ -5,13 +5,13 @@ a confronto diversi algoritmi seriali e paralleli (basati su MPI).
 ## Utilizzo
 Compila i sorgenti
 
-  make
+    make
 
 Sposta i sorgenti nella cartella bin
 
-  make install
+    make install
 
 Genera la documentazione con Doxygen
 
-  make doc
+    make doc
 
