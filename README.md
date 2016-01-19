@@ -1,2 +1,2 @@
 # cp151602
-Calcolo parallelo 2015/2016, gruppo 2
+Project for the course "Calcolo parallelo 2015/2016", group 2
