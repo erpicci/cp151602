@@ -1,7 +1,11 @@
-# Eigenvalues
-Project for the course "Calcolo parallelo 2015/2016", group 2
+# Progetto Calcolo Parallelo 2015/2016
+Calcolo degli autovalori di una matrice simmetrica tridiagonale, ponendo
+a confronto diversi algoritmi seriali e paralleli (basati su MPI).
 
-## Abstract
-Compute eigenvalues of a real symmetric tridiagonal matrix. We have
-implemented and compared srial and parallel, MPI-based algorithm
-implementations.
+## Utilizzo
+Compila i sorgenti
+  make
+Sposta i sorgenti nella cartella bin
+  make install
+Genera la documentazione con Doxygen
+  make doc
