@@ -14,7 +14,6 @@ OPIMIZE = -O2
 DEBUG   =
 LIBPATH =
 LIBS    = -lm -llapack
-LIBSSH  = -lm -llapack
 
 BIN     = ../bin/
 
