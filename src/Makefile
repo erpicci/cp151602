@@ -69,7 +69,7 @@ install: $(PROJ)
 
 $(PROJ):
 	@echo "Linking $@..."
-	$(CC) $(LDFLAGS) -o $@ $^ $(LIBSSH)
+	@$(CC) $(LDFLAGS) -o $@ $^ $(LIBSSH)
 	@echo "done."
 
 install:
