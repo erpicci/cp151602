@@ -2,7 +2,7 @@
 Calcolo degli autovalori di una matrice simmetrica tridiagonale, ponendo
 a confronto diversi algoritmi seriali e paralleli (basati su MPI).
 
-## Utilizzo
+## Compilazione
 Compila i sorgenti con impostazioni di default (openMPI)
 
     make
@@ -19,3 +19,13 @@ Genera la documentazione con Doxygen
 
     make doc
 
+
+## Utilizzo
+Genera (su standard output) una matrice di dimensione 10
+
+    ./generator -n 10
+
+
+Calcola gli autovalori della matrice memorizzata in file.dat (usando il risolutore di lapack)
+
+    ./lapack < file.dat
