@@ -7,9 +7,9 @@
 
 ########################################################################
 # Configuration
-CC      = mpicc
-CCFLAGS = -Wall -Wextra -pedantic -Wno-long-long -O3 -ansi -g
-LDFLAGS = -lm -llapack
+CC      = mpcc
+CCFLAGS = -O2 -qlanglvl=stdc89 -qlibansi -qlibmpi
+LDFLAGS = -L/usr/linux/lib -lm -llapack
 
 BIN     = ../bin/
 
@@ -17,7 +17,7 @@ BIN     = ../bin/
 
 ########################################################################
 # Dependencies
-PROJ   = generator lapack parallel
+PROJ   = generator parallel #lapack
 SERIAL = st_matrix.o serial_chronometer.o
 MPI    = st_matrix.o mpi_chronometer.o
 
@@ -44,7 +44,7 @@ install: $(PROJ)
 
 $(PROJ):
 	@echo "Linking $@..."
-	@$(CC) -o $@ $^ $(LDFLAGS) 
+	@$(CC) $(LDFLAGS) -o $@ $^
 	@echo "done."
 
 install:
