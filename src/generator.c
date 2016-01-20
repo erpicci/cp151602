@@ -29,6 +29,9 @@
 #include <time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#ifndef IBM
+#include <getopt.h>
+#endif
 
 #include "utils.h"
 #include "st_matrix.h"

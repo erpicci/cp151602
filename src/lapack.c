@@ -67,7 +67,7 @@ extern void
 dstev(char *jobz, int *n, double *d, double *e, double *z, int *ldz, double *work, int *info);
 #else
 extern void
-_dstev(char *jobz, int *n, double *d, double *e, double *z, int *ldz, double *work, int *info);
+dstev_(char *jobz, int *n, double *d, double *e, double *z, int *ldz, double *work, int *info);
 #endif
 
 
@@ -87,7 +87,7 @@ void compute_eigenvalues(st_matrix_t M, double *eigenvalues) {
 #ifdef IBM
     dstev(&jobz, &n, d, e, NULL, &n, work, &info);
 #else
-    _dstev($jobz, &n, d, e, NULL, &n, work, &info);
+    dstev_(&jobz, &n, d, e, NULL, &n, work, &info);
 #endif
 
     free(e);
