@@ -62,8 +62,13 @@
  *                           converge; i off-diagonal elements of e did
  *                           not converge to zero
  */
+#ifdef IBM
 extern void
-dstev_(char *jobz, int *n, double *d, double *e, double *z, int *ldz, double *work, int *info);
+dstev(char *jobz, int *n, double *d, double *e, double *z, int *ldz, double *work, int *info);
+#else
+extern void
+_dstev(char *jobz, int *n, double *d, double *e, double *z, int *ldz, double *work, int *info);
+#endif
 
 
 
@@ -79,7 +84,11 @@ void compute_eigenvalues(st_matrix_t M, double *eigenvalues) {
     memcpy(d, st_matrix_diag(M), n * sizeof(double));
     memcpy(e, st_matrix_subdiag(M), (n - 1) * sizeof(double));
 
-    dstev_(&jobz, &n, d, e, NULL, &n, work, &info);
+#ifdef IBM
+    dstev(&jobz, &n, d, e, NULL, &n, work, &info);
+#else
+    _dstev($jobz, &n, d, e, NULL, &n, work, &info);
+#endif
 
     free(e);
     free(work);

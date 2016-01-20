@@ -49,7 +49,7 @@ static void show_helper(const int argc, char * const argv[]) {
     printf("Instance is generated randomly, considering an uniform distribution of random values\n");
     printf("\n");
     printf("Usage:\n");
-    printf("  %s -n <int> -m <num> -M <num> -h\n", argv[0]);
+    printf("  %s -s <int> -m <num> -M <num> -h\n", argv[0]);
     printf("\n");
     printf("Options:\n");
     printf("  -n <int>\t Size of the matrix (default: 5)\n");

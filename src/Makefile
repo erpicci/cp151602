@@ -7,17 +7,41 @@
 
 ########################################################################
 # Configuration
-CC      = mpcc
-CCFLAGS = -O2 -qlanglvl=stdc89 -qlibansi -qlibmpi
-LDFLAGS = -L/usr/linux/lib -lm -llapack
+CC      = mpicc
+CCOPT   = -Wall -Wextra -pedantic -ansi -Wno-long-long -c
+INCPATH =
+OPIMIZE = -O2
+DEBUG   =
+LIBPATH =
+LIBS    = -lm -llapack
 
 BIN     = ../bin/
+
+# Uses cc as compiler, if specified
+ifdef cc
+	CC = $(cc)
+endif
+
+# Includes debug symbols, if asked to
+ifdef debug
+	DEBUG = -g
+endif
+
+# Uses different options for mpcc (assumes xlc-like)
+ifeq ($(CC), mpcc)
+	CCOPT   = -qlanglvl=stdc89 -qlibansi -qlibmpi -c -DIBM
+	LIBPATH = -L/usr/linux/lib -L/usr/lpp/xlf/lib
+	LIBS    = -lm -llapack -lxlopt -lxl -lxlf90 -lblas
+endif
+
+CCFLAGS = $(CCOPT) $(OPTIMIZE) $(DEBUG)
+LDFLAGS = $(LIBPATH) $(LIBS)
 
 
 
 ########################################################################
 # Dependencies
-PROJ   = generator parallel #lapack
+PROJ   = generator parallel lapack
 SERIAL = st_matrix.o serial_chronometer.o
 MPI    = st_matrix.o mpi_chronometer.o
 
@@ -40,7 +64,7 @@ install: $(PROJ)
 # Recipes
 %.o: %.c
 	@echo "Compiling $@..."
-	@$(CC) $(CCFLAGS) -c $^ -o $@
+	@$(CC) $(CCFLAGS) $^ -o $@
 
 $(PROJ):
 	@echo "Linking $@..."
