@@ -13,7 +13,8 @@ INCPATH =
 OPIMIZE = -O2
 DEBUG   =
 LIBPATH =
-LIBS    = -lm -llapack
+LIBS    =
+LIBSSH  = -lm -llapack
 
 BIN     = ../bin/
 
@@ -68,7 +69,7 @@ install: $(PROJ)
 
 $(PROJ):
 	@echo "Linking $@..."
-	@$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBSSH)
 	@echo "done."
 
 install:
