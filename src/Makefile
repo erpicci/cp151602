@@ -68,7 +68,7 @@ install: $(PROJ)
 
 $(PROJ):
 	@echo "Linking $@..."
-	$(CC) $(LDFLAGS) -o $@ $^
+	@$(CC) $(LDFLAGS) -o $@ $^
 	@echo "done."
 
 install:
