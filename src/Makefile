@@ -43,17 +43,16 @@ LDFLAGS = $(LIBPATH) $(LIBS)
 ########################################################################
 # Dependencies
 PROJ   = generator parallel lapack
-SERIAL = st_matrix.o serial_chronometer.o
-MPI    = st_matrix.o mpi_chronometer.o
+OBJ    = st_matrix.o stopwatch.o
 
 all: $(PROJ)
 
-generator: st_matrix.o generator.o
+generator: $(OBJ) generator.o
 
-lapack: $(SERIAL) solver_lapack.o
+lapack: $(OBJ) solver_lapack.o
 
 # This is here for demo purposes
-parallel: $(MPI) stopwatch.o parallel.o
+parallel: $(OBJ) parallel.o
 
 install: $(PROJ)
 
