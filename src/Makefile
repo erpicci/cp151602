@@ -13,8 +13,7 @@ INCPATH =
 OPIMIZE = -O2
 DEBUG   =
 LIBPATH =
-LIBS    =
-LIBSSH  = -lm -llapack
+LIBS    = -lm -llapack
 
 BIN     = ../bin/
 
@@ -31,11 +30,12 @@ endif
 # Uses different options for mpcc (assumes xlc-like)
 ifeq ($(CC), mpcc)
 	CCOPT   = -qlanglvl=stdc89 -qlibansi -qlibmpi -c -DIBM
-	LIBPATH = -L/usr/linux/lib -L/usr/lpp/xlf/lib
-	LIBS    = -lm -llapack -lxlopt -lxl -lxlf90 -lblas
+	INCPATH = -I/usr/lpp/ppe.hpct/include
+	LIBPATH = -L/usr/linux/lib -L/usr/lpp/xlf/lib -L/usr/lpp/ppe.hpct/lib
+	LIBS    = -lm -llapack -lxlopt -lxl -lxlf90 -lblas -lhpc -lpmapi
 endif
 
-CCFLAGS = $(CCOPT) $(OPTIMIZE) $(DEBUG)
+CCFLAGS = $(INCPATH) $(CCOPT) $(OPTIMIZE) $(DEBUG)
 LDFLAGS = $(LIBPATH) $(LIBS)
 
 
@@ -50,7 +50,7 @@ all: $(PROJ)
 
 generator: st_matrix.o generator.o
 
-lapack: $(SERIAL) lapack.o
+lapack: $(SERIAL) solver_lapack.o
 
 # This is here for demo purposes
 parallel: $(MPI) mpi_chronometer.o parallel.o
@@ -69,7 +69,7 @@ install: $(PROJ)
 
 $(PROJ):
 	@echo "Linking $@..."
-	@$(CC) $(LDFLAGS) -o $@ $^ $(LIBSSH)
+	@$(CC) -o $@ $^ $(LDFLAGS)
 	@echo "done."
 
 install:

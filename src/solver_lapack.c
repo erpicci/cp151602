@@ -28,50 +28,17 @@
 #include <string.h>
 
 #include "st_matrix.h"
+#include "lapack.h"
 #include "eigenvalues.h"
 #include "chronometer.h"
 #include "utils.h"
 
 
 /**
- * LAPACK dstev_.
- * Computes all eigenvalues and, optionally, eigenvectors of a real
- * symmetric tridiagonal matrix A.
- * @param[in]      jobz 'N' for eigenvalues, 'V' for eigenvalues and eigenvectors
- * @param[in]      n    Order of the matrix, N >= 0
- * @param[in, out] d    Array of size n; on entry, the n diagonal
- *                      elements of the tridiagonal matrix A. On exit,
- *                      if INFO = 0, the eigenvaules in ascending order
- * @param[in, out]  e   On entry, the (n-1) subdiagonal elements of the
- *                      tridiagonal matrix A, stored in elements 1 to
- *                      n-1 of e; e(n) need not be set, but is used by
- *                      the routine. On exit, the contents of e are
- *                      destroyed
- * @param[out]     z    If jobz = 'V', then if INFO = 0, Z contains the
- *                      orthonormal eigenvectors of the matrix A, with
- *                      the i-th column of z holding the eigenvector
- *                      associated with D(i). If jobz = 'N', then z is
- *                      not referenced
- * @param[in]      ldz  The leading dimension of the array z. ldz >= 1
- *                      and if jobz = 'N', ldz >= max(1,n)
- * @param[in, out] work If jobz = 'N', work is not referenced
- * @param[out]     info = 0: successful exit,
- *                      < 0: if info = -i, the i-th argument had an
- *                           illegal value,
- *                      > 0: if info = i, the algorithm failed to
- *                           converge; i off-diagonal elements of e did
- *                           not converge to zero
+ * Computes eigenvalues.
+ * @param[in] M            Symmetric tridiagonal matrix
+ * @param[out] eigenvalues Array of eigenvalues
  */
-#ifdef IBM
-extern void
-dstev(char *jobz, int *n, double *d, double *e, double *z, int *ldz, double *work, int *info);
-#else
-extern void
-dstev_(char *jobz, int *n, double *d, double *e, double *z, int *ldz, double *work, int *info);
-#endif
-
-
-
 void compute_eigenvalues(st_matrix_t M, double *eigenvalues) {
     char jobz = 'N';
     int info, n = st_matrix_size(M);
@@ -84,11 +51,7 @@ void compute_eigenvalues(st_matrix_t M, double *eigenvalues) {
     memcpy(d, st_matrix_diag(M), n * sizeof(double));
     memcpy(e, st_matrix_subdiag(M), (n - 1) * sizeof(double));
 
-#ifdef IBM
     dstev(&jobz, &n, d, e, NULL, &n, work, &info);
-#else
-    dstev_(&jobz, &n, d, e, NULL, &n, work, &info);
-#endif
 
     free(e);
     free(work);
