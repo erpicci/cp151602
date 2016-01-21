@@ -97,7 +97,7 @@ int main(const int argc, char * const argv[]) {
     /* Frees memory */
     st_matrix_delete(&M);
     free(eigenvalues);
-    stopwatch_delete(&chronometer);
+    stopwatch_delete(&stopwatch);
 
     return EXIT_SUCCESS;
 }
