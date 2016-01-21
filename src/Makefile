@@ -53,7 +53,7 @@ generator: st_matrix.o generator.o
 lapack: $(SERIAL) solver_lapack.o
 
 # This is here for demo purposes
-parallel: $(MPI) mpi_chronometer.o parallel.o
+parallel: $(MPI) stopwatch.o parallel.o
 
 install: $(PROJ)
 
