@@ -29,7 +29,7 @@ endif
 
 # Uses different options for mpcc (assumes xlc-like)
 ifeq ($(CC), mpcc)
-	CCOPT   = -qlanglvl=stdc89 -qlibansi -qlibmpi -c -DIBM
+	CCOPT   = -qlanglvl=stdc89 -qlibansi -qlibmpi -c -DIBM -DHPC
 	INCPATH = -I/usr/lpp/ppe.hpct/include
 	LIBPATH = -L/usr/linux/lib -L/usr/lpp/xlf/lib -L/usr/lpp/ppe.hpct/lib
 	LIBS    = -lm -llapack -lxlopt -lxl -lxlf90 -lblas -lhpc -lpmapi
