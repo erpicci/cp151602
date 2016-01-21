@@ -4,7 +4,7 @@
 
 #include "st_matrix.h"
 #include "eigenvalues.h"
-#include "chronometer.h"
+#include "stopwatch.h"
 #include "utils.h"
 
 
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     const unsigned int size = st_matrix_size(M);
     double *eigenvalues, time;
     unsigned int i;
-    chronometer_t chronometer = chronometer_create();
+    stopwatch_t stopwatch = stopwatch_create("Sample task");
 
     (void) argc;
     (void) argv;
@@ -87,9 +87,9 @@ int main(int argc, char *argv[]) {
 
 
     /* Computes eigenvalues */
-    chronometer_start(chronometer);
+    stopwatch_start(stopwatch, 0, "Compute eigenvalues");
     compute_eigenvalues(M, eigenvalues);
-    time = chronometer_stop(chronometer);
+    stopwatch_stop(stopwatch, 0);
 
 
     /* Prints results */
@@ -98,14 +98,13 @@ int main(int argc, char *argv[]) {
         printf("%g, ", eigenvalues[i]);
     }
     printf("%g]\n", eigenvalues[i]);
-    printf("Time: %g ms\n", time);
     
 
     /* Frees memory */
     MPI_Finalize();
     st_matrix_delete(&M);
     free(eigenvalues);
-    chronometer_delete(&chronometer);
+    stopwatch_delete(&stopwatch);
     
     return 0;
 }
