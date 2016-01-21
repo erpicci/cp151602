@@ -18,7 +18,7 @@
  * Computes eigenvalues of a symmetric tridiagonal matrix.
  * Uses LAPACK library to obtain eigenvalues.
  * @note LAPACK routines are used as a black box tool
- * @file lapack.c
+ * @file solver_lapack.c
  * @author Erika Fabris <fabriser@dei.unipd.it>
  * @author Thomas Gagliardi <gagliard@dei.unipd.it>
  * @author Marco Zanella <marco.zanella.9@studenti.unipd.it>

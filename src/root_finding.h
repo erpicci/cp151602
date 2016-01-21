@@ -16,7 +16,7 @@
 
 /**
  * Computes roots of a function.
- * @file root-finding.h
+ * @file root_finding.h
  * @author Erika Fabris <fabriser@dei.unipd.it>
  * @author Thomas Gagliardi <gagliard@dei.unipd.it>
  * @author Marco Zanella <marco.zanella.9@studenti.unipd.it>
