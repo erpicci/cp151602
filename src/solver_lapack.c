@@ -83,7 +83,7 @@ int main(const int argc, char * const argv[]) {
     /* Computes eigenvalues */
     stopwatch_start(stopwatch, 0, "Compute eigenvalues");
     compute_eigenvalues(M, eigenvalues);
-    chronometer_stop(stopwatch, 0);
+    stopwatch_stop(stopwatch, 0);
 
 
     /* Prints results */
