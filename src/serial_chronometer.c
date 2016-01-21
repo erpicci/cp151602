@@ -22,6 +22,8 @@
  * @author Thomas Gagliardi <gagliard@dei.unipd.it>
  * @author Marco Zanella <marco.zanella.9@studenti.unipd.it>
  * @copyright GNU GPLv3 <http://www.gnu.org/licenses/gpl-3.0.txt>
+ * @deprecated Chronometer utility will be removed as soon as possible.
+ * Please use the stopwatch utility in stopwatch.h instead.
  */
 #include "chronometer.h"
 

@@ -22,6 +22,8 @@
  * @author Thomas Gagliardi <gagliard@dei.unipd.it>
  * @author Marco Zanella <marco.zanella.9@studenti.unipd.it>
  * @copyright GNU GPLv3 <http://www.gnu.org/licenses/gpl-3.0.txt>
+ * @deprecated Chronometer utility will be removed as soon as possible.
+ * Please use the stopwatch utility in stopwatch.h instead.
  */
 #ifndef _CHRONOMETER_H_
 #define _CHRONOMETER_H_
@@ -33,6 +35,8 @@ typedef struct chronometer_s *chronometer_t;
 /**
  * Creates a new chronometer.
  * @return A new chronometer
+ * @deprecated Chronometer utility will be removed as soon as possible.
+ * Please use the stopwatch utility in stopwatch.h instead.
  */
 chronometer_t chronometer_create();
 
@@ -40,6 +44,8 @@ chronometer_t chronometer_create();
 /**
  * Deletes a chronometer.
  * @param[out] chronometer Pointer to chronometer
+ * @deprecated Chronometer utility will be removed as soon as possible.
+ * Please use the stopwatch utility in stopwatch.h instead.
  */
 void chronometer_delete(chronometer_t *chronometer);
 
@@ -49,6 +55,8 @@ void chronometer_delete(chronometer_t *chronometer);
  * Resets any previous measurement.
  * @param[out] chronometer Chronometer to start
  * @return Chronometer itself
+ * @deprecated Chronometer utility will be removed as soon as possible.
+ * Please use the stopwatch utility in stopwatch.h instead.
  */
 chronometer_t chronometer_start(chronometer_t chronometer);
 
@@ -57,7 +65,9 @@ chronometer_t chronometer_start(chronometer_t chronometer);
  * Stops the chronometer and returns elapsed time.
  * Returns time in milliseconds.
  * @param[out] chronometer Chronometer to stop
- * @return 
+ * @return Elapsed time
+ * @deprecated Chronometer utility will be removed as soon as possible.
+ * Please use the stopwatch utility in stopwatch.h instead.
  */
 double chronometer_stop(chronometer_t chronometer);
 

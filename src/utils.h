@@ -18,9 +18,9 @@
  * General utility macros.
  * Offers additional macros to interact with MPI APIs.
  * @file utils.h
- * @author Marco Zanella <marco.zanella.9@studenti.unipd.it>
  * @author Erika Fabris <fabriser@dei.unipd.it>
  * @author Thomas Gagliardi <gagliard@dei.unipd.it>
+ * @author Marco Zanella <marco.zanella.9@studenti.unipd.it>
  * @copyright GNU GPLv3 <http://www.gnu.org/licenses/gpl-3.0.txt>
  */
 #ifndef _UTILS_H_
