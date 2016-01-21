@@ -11,11 +11,11 @@ Compila i sorgenti su Power7
 
     make cc=mpcc
 
-Sposta i sorgenti nella cartella bin
+Sposta gli eseguibili generati sotto la cartella bin/
 
     make install
 
-Genera la documentazione con Doxygen
+Genera la documentazione con Doxygen in doc/html/
 
     make doc
 
@@ -26,6 +26,6 @@ Genera (su standard output) una matrice di dimensione 10
     ./generator -n 10
 
 
-Calcola gli autovalori della matrice memorizzata in file.dat (usando il risolutore di lapack)
+Calcola gli autovalori della matrice memorizzata in file.dat (esempio usando il risolutore di lapack)
 
     ./lapack < file.dat
