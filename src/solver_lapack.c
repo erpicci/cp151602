@@ -28,14 +28,14 @@
 #include <string.h>
 
 #include "st_matrix.h"
-#include "lapack.h"
-#include "eigenvalues.h"
+#include "algorithms/lapack.h"
 #include "stopwatch.h"
 #include "utils.h"
 
 
 /**
  * Computes eigenvalues.
+ * Uses LAPACK library.
  * @param[in] M            Symmetric tridiagonal matrix
  * @param[out] eigenvalues Array of eigenvalues
  */
@@ -69,7 +69,7 @@ void compute_eigenvalues(st_matrix_t M, double *eigenvalues) {
 int main(const int argc, char * const argv[]) {
     st_matrix_t M = st_matrix_load(stdin);
     const unsigned int size = st_matrix_size(M);
-    double *eigenvalues, time;
+    double *eigenvalues;
     unsigned int i;
     stopwatch_t stopwatch = stopwatch_create("LAPACK_solver");
 

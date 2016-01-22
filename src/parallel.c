@@ -3,7 +3,6 @@
 #include <math.h>
 
 #include "st_matrix.h"
-#include "eigenvalues.h"
 #include "stopwatch.h"
 #include "utils.h"
 
@@ -74,7 +73,7 @@ void compute_eigenvalues(st_matrix_t M, double *eigenvalues) {
 int main(int argc, char *argv[]) {
     st_matrix_t M = st_matrix_load(stdin);
     const unsigned int size = st_matrix_size(M);
-    double *eigenvalues, time;
+    double *eigenvalues;
     unsigned int i;
     stopwatch_t stopwatch = stopwatch_create("Sample task");
 

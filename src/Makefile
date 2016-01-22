@@ -77,7 +77,7 @@ install:
 
 clean:
 	@echo "Cleaning..."
-	@rm -fR *.o $(PROJ)
+	@rm -fR *.dat *.o $(PROJ)
 
 doc:
 	@echo "Generating documentation..."
