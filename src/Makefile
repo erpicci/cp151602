@@ -42,7 +42,7 @@ LDFLAGS = $(LIBPATH) $(LIBS)
 
 ########################################################################
 # Dependencies
-PROJ   = generator parallel lapack
+PROJ   = generator parallel lapack divide_et_impera
 OBJ    = st_matrix.o stopwatch.o
 
 all: $(PROJ)
@@ -50,6 +50,7 @@ all: $(PROJ)
 generator: $(OBJ) generator.o
 
 lapack: $(OBJ) solver_lapack.o
+divide_et_impera: $(OBJ) algorithms/divide_et_impera.o solver_dei.o
 
 # This is here for demo purposes
 parallel: $(OBJ) parallel.o
