@@ -22,22 +22,22 @@
  * @author Marco Zanella <marco.zanella.9@studenti.unipd.it>
  * @copyright GNU GPLv3 <http://www.gnu.org/licenses/gpl-3.0.txt>
  */
-#include "root-finding.h"
+#include "root_finding.h"
 
 #include <math.h>
 
 /** Allowed tolerance. */
-const double EPS = 1e-6;
+static const double EPS = 1e-6;
 
 
 
 double bisection(double min, double max, double (*f)(double, void *), void *args) {
     double f_x, x;
-    
+
     while (max - min > EPS) {
         x   = (max + min) * 0.5;
         f_x = (*f)(x, args);
-        
+
         if (f_x > EPS) {
             max = x;
         }
