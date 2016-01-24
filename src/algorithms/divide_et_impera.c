@@ -32,6 +32,7 @@
 
 #include "../utils.h"
 #include "root_finding.h"
+#include "basic_la.h"
 
 
 
@@ -44,9 +45,11 @@ struct params_s {
 };
 
 
+
 double sign(double v) {
     return (v > 0.0) ? 1.0 : ((v < 0.0) ? -1.0 : 0.0);
 }
+
 
 
 /**
@@ -57,7 +60,7 @@ double sign(double v) {
  */
 double secular_function(double lambda, void *args) {
     unsigned int i;
-    double value = 0;
+    double value = 0.0;
     struct params_s *params = (struct params_s *) args;
 
     for (i = 0; i < params->n; ++i) {
@@ -65,6 +68,18 @@ double secular_function(double lambda, void *args) {
     }
 
     return 1.0 + params->rho * value;
+}
+
+double secular_function_prime(double lambda, void *args) {
+    unsigned int i;
+    double value = 0.0;
+    struct params_s *params = (struct params_s *) args;
+
+    for (i = 0; i < params->n; ++i) {
+        value += params->usqr[i] / ((params->d[i] - lambda) * (params->d[i] - lambda));
+    }
+
+    return params->rho * value; 
 }
 
 
@@ -98,21 +113,6 @@ void merge(
     memcpy(b + k, b2 + j, (n2 - j) * sizeof(double));
 }
 
-
-
-void multiply(double Q1[], const unsigned int n1, const double Q2[], const unsigned int n2, double Q[]) {
-    register unsigned int i, j, k;
-
-    for (i = 0; i < n1; ++i) {
-        for (j = 0; j < n2; ++j) {
-            double sum = 0.0;
-            for (k = 0; k < n1; ++k) {
-                sum += Q1[i * n1 + k] * Q2[k * n2 + j];
-            }
-            Q[i * n2 + j] = sum;
-        }
-    }
-}
 
 
 /**
@@ -219,8 +219,12 @@ eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigne
 
 
     /* Computes eigenvectors as [Q1 0; 0 Q2] * Qprime */
-    multiply(Q1, n1, Qp, n, Q);
-    multiply(Q2, n2, Qp + n1 * n, n, Q + n1 * n);
+/*
+    matrix_multiply(Q,          Q1, Qp,          n1, n, n1);
+    matrix_multiply(Q + n1 * n, Q2, Qp + n1 * n, n2, n, n2);
+*/
+matrix_multiply(Q,      Q1, Qp,     1, n, n1);
+matrix_multiply(Q + (n - 1) * n, Q2 + (n2 - 1) * n2, Qp + (n - n2) * n, 1, n, n2);
 
 
     /* Frees memory */
