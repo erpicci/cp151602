@@ -33,7 +33,9 @@
  * @param[in] args Additional arguments to pass to f
  * @return Root of f between min and max
  */
-double bisection(double min, double max, double (*f)(double, void *), void *args);
+double bisection(
+    double min, double max,
+    double (*f)(const double, const void *), const void *args);
 
 
 /**
@@ -44,7 +46,9 @@ double bisection(double min, double max, double (*f)(double, void *), void *args
  * @param[in] args Additional arguments to pass to f
  * @return Root of f between min and max
  */
-double regula_falsi(double min, double max, double (*f)(double, void*), void *args);
+double regula_falsi(
+    double min, double max,
+    double (*f)(const double, const void*), const void *args);
 
 
 /**
@@ -55,6 +59,9 @@ double regula_falsi(double min, double max, double (*f)(double, void*), void *ar
  * @param[in] args Additional arguments to pass to f and fp
  * @return Root of f between min and max
  */
-double newton(double x, double (*f)(double, void *), double (*fp)(double, void *), void *args);
+double newton(
+    double x,
+    double (*f)(const double, const void *),
+    double (*fp)(const double, const void *), const void *args);
 
 #endif  /* _ROOTFINDING_H_ */

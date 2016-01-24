@@ -38,15 +38,22 @@
 
 /** Parameters for the secular equation. */
 struct params_s {
-    unsigned int n;  /** Size of the matrix */
-    double rho;      /** Element on the subdiagonal */
-    double *d;       /** Eigenvalues */
-    double *usqr;    /** Eigenvector (elements are squared) */
+    unsigned int n;  /**< Size of the matrix */
+    double rho;      /**< Element on the subdiagonal */
+    double *d;       /**< Eigenvalues */
+    double *usqr;    /**< Eigenvector (elements are squared) */
 };
 
 
 
-double sign(double v) {
+/**
+ * Returns sign of a value.
+ * @param[in] v Value
+ * @retval +1.0 If v is positive
+ * @retval  0.0 If v is zero
+ * @retval -1.0 if v is negative
+ */
+static double sign(const double v) {
     return (v > 0.0) ? 1.0 : ((v < 0.0) ? -1.0 : 0.0);
 }
 
@@ -55,13 +62,13 @@ double sign(double v) {
 /**
  * Function for the secular equation.
  * @param[in] lambda Independent variable
- * @param[in] params Parameters
+ * @param[in] args    Parameters
  * @return Value of the function for given lambda
  */
-double secular_function(double lambda, void *args) {
+static double secular_function(const double lambda, const void *args) {
     unsigned int i;
     double value = 0.0;
-    struct params_s *params = (struct params_s *) args;
+    const struct params_s *params = (struct params_s *) args;
 
     for (i = 0; i < params->n; ++i) {
         value += params->usqr[i] / (params->d[i] - lambda);
@@ -70,10 +77,18 @@ double secular_function(double lambda, void *args) {
     return 1.0 + params->rho * value;
 }
 
-double secular_function_prime(double lambda, void *args) {
+
+
+/**
+ * First derivative of the function for the secular equation.
+ * @param[in] lambda Independent variable
+ * @param[in] args   Arguments
+ * @return Value of the first derivative at given lambda
+ */
+static double secular_function_prime(const double lambda, const void *args) {
     unsigned int i;
     double value = 0.0;
-    struct params_s *params = (struct params_s *) args;
+    const struct params_s *params = (struct params_s *) args;
 
     for (i = 0; i < params->n; ++i) {
         value += params->usqr[i] / ((params->d[i] - lambda) * (params->d[i] - lambda));
@@ -85,6 +100,19 @@ double secular_function_prime(double lambda, void *args) {
 
 
 /**
+ * Merges two couples of arrays.
+ * Arrays a1 and a2 are merged keeping the resulting array sorted, b1
+ * and b2 are merged preserving the same order of the elements in a1
+ * and a2.
+ * Both a and b must be large enough to hold n1 + n2 elements.
+ * @param[out] a  Result main vector
+ * @param[out] b  Result companion vector
+ * @param[in]  a1 First main vector
+ * @param[in]  b1 First companion vector
+ * @param[in]  n1 Size of first vector
+ * @param[in]  a2 Second main vector
+ * @param[in]  b2 Second companion vector
+ * @param[in]  n2 Size of second vector
  */
 void merge(
     double a[], double b[],
@@ -118,11 +146,11 @@ void merge(
 /**
  * Computes eigenvalues and eigenvectors of a symmetric tridiagonal matrix.
  * Computation is recursive with a divide et impera approach.
- * @param[in]  d     Main diagonal
- * @param[in]  e     First subdiagonal
- * @param[in]  n     Size of the matrix
- * @param[out] evals Array of eigenvalues
- * @param[out] evecs Array of eigenvectors
+ * @param[out] lambda Array of eigenvalues
+ * @param[out] Q      Array of eigenvectors (only first and last row)
+ * @param[in]  d      Main diagonal
+ * @param[in]  e      First subdiagonal
+ * @param[in]  n      Size of the matrix
  */
 static void
 eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigned int n) {
@@ -240,6 +268,7 @@ matrix_multiply(Q + (n - 1) * n, Q2 + (n2 - 1) * n2, Qp + (n - n2) * n, 1, n, n2
     free(Qp);
     }
 }
+
 
 
 void divide_et_impera(const st_matrix_t M, double *eigenvalues) {

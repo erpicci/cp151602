@@ -31,7 +31,9 @@ static const double EPS = 1e-6;
 
 
 
-double bisection(double min, double max, double (*f)(double, void *), void *args) {
+double bisection(
+    double min, double max,
+    double (*f)(const double, const void *), const void *args) {
     double f_x, x;
 
     while (max - min > EPS) {
@@ -54,7 +56,9 @@ double bisection(double min, double max, double (*f)(double, void *), void *args
 
 
 
-double regula_falsi(double min, double max, double (*f)(double, void*), void *args) {
+double regula_falsi(
+    double min, double max,
+    double (*f)(const double, const void *), const void *args) {
     int side = 0;
     double x, f_x,
            f_min = (*f)(min, args),
@@ -92,7 +96,11 @@ double regula_falsi(double min, double max, double (*f)(double, void*), void *ar
 
 
 
-double newton(double x, double (*f)(double, void *), double (*fp)(double, void *), void *args) {
+double newton(
+    double x,
+    double (*f)(const double, const void *),
+    double (*fp)(const double, const void *),
+    const void *args) {
     double f_x  = (*f)(x, args),
            fp_x = (*fp)(x, args);
     
