@@ -10,7 +10,7 @@
 CC      = mpicc
 CCOPT   = -Wall -Wextra -pedantic -ansi -Wno-long-long -c
 INCPATH =
-OPIMIZE = -O2
+OPIMIZE = -O2 -funroll-loops -fomit-frame-pointer
 DEBUG   =
 LIBPATH =
 LIBS    = -lm -llapack

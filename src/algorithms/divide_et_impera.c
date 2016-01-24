@@ -66,12 +66,15 @@ static double sign(const double v) {
  * @return Value of the function for given lambda
  */
 static double secular_function(const double lambda, const void *args) {
-    unsigned int i;
-    double value = 0.0;
+    register double value = 0.0;
     const struct params_s *params = (struct params_s *) args;
+    register int i = params->n - 1;
+    register const double * const usqr = params->usqr;
+    register const double * const d    = params->d;
 
-    for (i = 0; i < params->n; ++i) {
-        value += params->usqr[i] / (params->d[i] - lambda);
+    value += *usqr / (*d - lambda);
+    for (; i; i -= 1) {
+        value += usqr[i] / (d[i] - lambda);
     }
 
     return 1.0 + params->rho * value;
@@ -146,8 +149,10 @@ void merge(
 /**
  * Computes eigenvalues and eigenvectors of a symmetric tridiagonal matrix.
  * Computation is recursive with a divide et impera approach.
+ * Lambda must be large enough to hold n elements, Q must be large
+ * enough to hold 2 * n elements.
  * @param[out] lambda Array of eigenvalues
- * @param[out] Q      Array of eigenvectors (only first and last row)
+ * @param[out] Q      Array of eigenvectors (only first and last)
  * @param[in]  d      Main diagonal
  * @param[in]  e      First subdiagonal
  * @param[in]  n      Size of the matrix
@@ -175,9 +180,9 @@ eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigne
     struct params_s params;
 
     SAFE_MALLOC(L1, double *, n1 * sizeof(double));
-    SAFE_MALLOC(Q1, double *, n1 * n1 * sizeof(double));
+    SAFE_MALLOC(Q1, double *, 2 * n1 * sizeof(double));
     SAFE_MALLOC(L2, double *, n2 * sizeof(double));
-    SAFE_MALLOC(Q2, double *, n2 * n2 * sizeof(double));
+    SAFE_MALLOC(Q2, double *, 2 * n2 * sizeof(double));
     SAFE_MALLOC(u1, double *, n1 * sizeof(double));
     SAFE_MALLOC(u2, double *, n2 * sizeof(double));
     SAFE_MALLOC(D, double *, n * sizeof(double));
@@ -199,7 +204,7 @@ eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigne
 
     /* u = [+- last row of Q1, first row of Q2] */
     for (i = 0; i < n1; i++) {
-        u1[i] = sign(rho) * Q1[(n1 - 1) * n1 + i];
+        u1[i] = sign(rho) * Q1[(n1 != 1) * n1 + i];
     }
     memcpy(u2, Q2, n2 * sizeof(double));
 
@@ -246,13 +251,9 @@ eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigne
     }
 
 
-    /* Computes eigenvectors as [Q1 0; 0 Q2] * Qprime */
-/*
-    matrix_multiply(Q,          Q1, Qp,          n1, n, n1);
-    matrix_multiply(Q + n1 * n, Q2, Qp + n1 * n, n2, n, n2);
-*/
-matrix_multiply(Q,      Q1, Qp,     1, n, n1);
-matrix_multiply(Q + (n - 1) * n, Q2 + (n2 - 1) * n2, Qp + (n - n2) * n, 1, n, n2);
+    /* Computes eigenvectors as [Q1 0; 0 Q2] * Qprime (only first and last) */
+    matrix_multiply(Q, Q1, Qp, 1, n, n1);
+    matrix_multiply(Q + n, Q2 + (n2 != 1) * n2, Qp + n1 * n, 1, n, n2);
 
 
     /* Frees memory */
