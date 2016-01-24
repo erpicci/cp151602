@@ -16,8 +16,10 @@
 
 /**
  * Divide et impera eigenvalue algorithm.
- * Implements the basic divide et impera eigenvalue algorithm
- * (Applied Numerical Linear Algebra @cite demmel1997).
+ * Interface for the basic divide et impera eigenvalue algorithm proposed
+ * by Cuppen (A divide and conquer method for the symmetric tridiagonal
+ * eigenproblem @cite cuppen1980, Applied Numerical Linear Algebra
+ * @cite demmel1997).
  * @file divide_et_impera.c
  * @author Erika Fabris <fabriser@dei.unipd.it>
  * @author Thomas Gagliardi <gagliard@dei.unipd.it>
