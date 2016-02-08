@@ -37,6 +37,17 @@ double
 scalar_product(const double v[], const double w[], const unsigned int n);
 
 
+
+/**
+ * Tells whether a square matrix is diagonal.
+ * @param[in] M Matrix
+ * @param[in] n Size of the matrix
+ * @retval 1 if M is diagonal
+ * @retval 0 if M is not diagonal
+ */
+unsigned int is_diagonal(const double M[], const unsigned int n);
+
+
 /**
  * Matrix-matrix multiplication C = A * B.
  * A is m x q, B is q x n, hence C is m x n.

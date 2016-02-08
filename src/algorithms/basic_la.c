@@ -27,9 +27,13 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 /** Size of a block. */
 #define BLK_SIZE 32
+
+/** Machine precision */
+#define EPSILON 1e-6
 
 
 /**
@@ -75,6 +79,23 @@ scalar_product(const double v[], const double w[], const unsigned int n) {
     }
 
     return sum;
+}
+
+
+
+unsigned int
+is_diagonal(const double M[], const unsigned int n) {
+    unsigned int i, j;
+
+    for (i = 0; i < n; ++i) {
+        for (j = 0; j < n; ++j) {
+            if (i != j && fabs(M[i * n + j]) < EPSILON) {
+                return 0;
+            }
+        }
+    }
+
+    return 1;
 }
 
 
