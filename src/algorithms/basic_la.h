@@ -37,7 +37,6 @@ double
 scalar_product(const double v[], const double w[], const unsigned int n);
 
 
-
 /**
  * Tells whether a square matrix is diagonal.
  * @param[in] M Matrix
@@ -46,6 +45,16 @@ scalar_product(const double v[], const double w[], const unsigned int n);
  * @retval 0 if M is not diagonal
  */
 unsigned int is_diagonal(const double M[], const unsigned int n);
+
+
+/**
+ * Transposes a matrix.
+ * @param[in, out] M Matrix to transpose
+ * @param[in]      m Number of rows of M
+ * @param[in]      n Number of columns of M
+ */
+void
+matrix_transpose(double M[], const unsigned int m, const unsigned int n);
 
 
 /**

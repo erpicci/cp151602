@@ -100,6 +100,42 @@ is_diagonal(const double M[], const unsigned int n) {
 
 
 
+void
+matrix_transpose(double M[], const unsigned int m, const unsigned int n) {
+    unsigned int i, j;
+    double *buffer;
+
+    /* Fast transposition if matrix is squared */
+    if (m == n) {
+        double swap;
+        for (i = 0; i < n; ++i) {
+            for (j = i + 1; j < n; ++j) {
+                swap = M[i * n + j];
+                M[i * n + j] = M[j * n + i];
+                M[j * n + i] = swap;
+            }
+        }
+        return;
+    }
+
+    /* Otherwise, less efficient transposition for rectangular matrices */
+    buffer = (double *) malloc(n * m * sizeof(double));
+    if (NULL == buffer) {
+        fprintf(stderr, "Cannot allocate memory [%s:%d]\n", __FILE__, __LINE__);
+        exit(EXIT_FAILURE);
+    }
+
+    for (i = 0; i < n; ++i) {
+        for (j = 0; j < m; ++j) {
+            buffer[i * m + j] = M[j * n + i];
+        }
+    }
+    memcpy(M, buffer, n * m * sizeof(double));
+    free(buffer);
+}
+
+
+
 void matrix_multiply(
     double C[], const double A[], const double B[],
     const unsigned int m, const unsigned int n, const unsigned int q) {
