@@ -213,13 +213,17 @@ eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigne
          * root <--gather-- evals
          */
         if (n > 10) {
+        int *count, *disp;
+        unsigned int how_many, idx;
+        
+        
         MPI_Bcast((unsigned int *) &n, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
         MPI_Bcast((double *) &rho, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
         MPI_Bcast(D, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
         MPI_Bcast(usqr, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
         
         
-        int *count, *disp;
+        
         SAFE_MALLOC(count, int *, mpi_size * sizeof(int));
         SAFE_MALLOC(disp,  int *, mpi_size * sizeof(int));
         
@@ -233,8 +237,8 @@ eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigne
                      : ext * (avg + 1) + (i - ext) * avg;
         }
         
-        unsigned int how_many = count[mpi_rank],
-                     idx      = disp[mpi_rank];
+        how_many = count[mpi_rank];
+        idx      = disp[mpi_rank];
         /*printf("rank, %d: do [%u, %u]: %u\n", mpi_rank, idx, idx + how_many, how_many);*/
         
         
