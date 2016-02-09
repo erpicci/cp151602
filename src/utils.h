@@ -30,6 +30,12 @@
 #include <stdlib.h>
 #include <mpi.h>
 
+
+/** MPI root node. */
+#define ROOT 0
+
+
+
 /**
  * Calls an MPI API and checks its return value.
  * If MPI API returns an error value (not equal to MPI_SUCCESS), prints
@@ -70,4 +76,4 @@
     }                                                        \
 }
 
-#endif  /* _MPI_UTILS_H_ */
+#endif  /* _UTILS_H_ */

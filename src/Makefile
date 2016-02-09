@@ -42,7 +42,8 @@ LDFLAGS = $(LIBPATH) $(LIBS)
 
 ########################################################################
 # Dependencies
-PROJ   = generator parallel lapack qr_iterative qr_householder divide_et_impera
+PROJ   = generator lapack qr_iterative qr_householder divide_et_impera \
+         divide_et_impera_mpi
 OBJ    = st_matrix.o stopwatch.o
 
 all: $(PROJ)
@@ -55,8 +56,8 @@ qr_householder: $(OBJ) algorithms/basic_la.o algorithms/qr_householder.o solver_
 divide_et_impera: $(OBJ) algorithms/root_finding.o algorithms/basic_la.o \
                   algorithms/divide_et_impera.o solver_dei.o
 
-# This is here for demo purposes
-parallel: $(OBJ) parallel.o
+divide_et_impera_mpi: $(OBJ) algorithms/root_finding.o algorithms/basic_la.o \
+                      algorithms/divide_et_impera_mpi.o solver_dei_mpi.o
 
 install: $(PROJ)
 
