@@ -16,20 +16,22 @@
 
 /**
  * QR iterative eigenvalue algorithm.
- * QR iterative eigenvalue algorithm proposed by Givens as described in
- * The algebraic eigenvalue problem @cite wilkinson1965 and Applied
- * Numerical Linear Algebra @cite demmel1997.
- * @file qr_iterative.c
+ * QR iterative eigenvalue algorithm which uses Householder
+ * transformations as described in The algebraic eigenvalue problem
+ * @cite wilkinson1965 and Applied Numerical Linear Algebra
+ * @cite demmel1997.
+ * @file qr_householder.c
  * @author Erika Fabris <fabriser@dei.unipd.it>
  * @author Thomas Gagliardi <gagliard@dei.unipd.it>
  * @author Marco Zanella <marco.zanella.9@studenti.unipd.it>
  * @copyright GNU GPLv3 <http://www.gnu.org/licenses/gpl-3.0.txt>
  */
-#include "qr_iterative.h"
+#include "qr_householder.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <float.h>
 
 #include "../utils.h"
 #include "basic_la.h"
@@ -129,6 +131,65 @@
 
 
 /**
+ * Computes vector v.
+ * v = [0, 0, ... alpha, -T(i, k), -T(i + 1, k), ... -T(size, k)]
+ * @param[out] v     Vector
+ * @param[in]  k     Current iteration
+ * @param[in]  T     Matrix
+ * @param[in]  size  Size of the matrix
+ * @param[in]  alpha Alpha
+ */
+static void
+get_v(double v[], const unsigned int k, const unsigned int size, const double T[], const double alpha);
+
+
+/**
+ * Returns alpha.
+ * alpha = +- norm(T(k:size, k)). 
+ * @param[in] k    Current iteration
+ * @param[in] size Size of the matrix
+ * @param[in] T    Matrix
+ * @return Alpha
+ */
+static double
+get_alpha(const unsigned int k, const unsigned int size, const double T[]);
+
+
+/**
+ * QR decomposition: A = Q * R.
+ * Uses Householder transformations.
+ * @param[out] Q    Orthonormal matrix
+ * @param[out] R    Upper triangular matrix
+ * @param[in]  size Size of the matrices
+ * @param[in]  A    Input matrix
+ */
+static void
+qr(double Q[], double R[], const unsigned int size, const double A[]);
+
+
+/**
+ * Computes Q = I - 2 * v' * v. 
+ * @param[out] Q    Output matrix
+ * @param[in]  size Size of the matrix
+ * @param[in]  v    Vector
+ */
+static void
+get_q(double Q[], const unsigned int size, const double v[]);
+
+
+/**
+ * Returns norm of a vector.
+ * Considers only elements whose index is greather of equal to k.
+ * @param[in] v    Vector
+ * @param[in] k    Starting index
+ * @param[in] size Size of the vector
+ * @return Norm of the vector
+ */
+static double
+get_norm_v(const double v[], const unsigned int k, const unsigned int size);
+
+
+/**
  * Computes a "good sigma" for the QR iterative algorithm.
  * The closer the value of sigma to an eigenvalue of M, the faster the
  * convergence of the QR iterative algorithm.
@@ -136,6 +197,123 @@
  * @param[in] size Size of the matrix
  * @return A value close to an eigenvalue of M
  */
+static double
+compute_sigma(const double M[], const unsigned int size);
+
+
+
+static void
+qr(double Q[], double R[], const unsigned int size, const double A[]) {
+    unsigned int i, k;
+    double *H, *v, *temp;
+
+    SAFE_MALLOC(H, double *, size * size * sizeof(double));
+    SAFE_MALLOC(v, double *, size * sizeof(double));
+    SAFE_MALLOC(temp, double *, size * size * sizeof(double));
+
+    /* Q = I */
+    memset(Q, 0, size * size * sizeof(double));
+    for (i = 0; i < size; ++i) {
+        Q[i * size + i] = 1.0;
+    }
+    
+    /* R = A */
+    memcpy(R, A, size * size * sizeof(double));
+
+    /* Main for loop */
+    for (k = 0; k < size - 1; ++k) {
+        double normv;
+        const double alpha = get_alpha(k, size, R);
+        get_v(v,k, size, R, alpha);
+        normv = get_norm_v(v, k, size);
+        
+        /* If norm of v is zero, no operation is needed */
+        if (normv < 1e-6) {
+            continue;
+        }
+
+        /* Normalizes v */
+        for(i = k; i < size; i++) {
+            v[i] = v[i] / normv;
+        }
+        
+        /* H = I - 2 * v' * v */
+        get_q(H, size, v); 
+
+        /* Q = Q * H */
+        post_multiply(Q, H, size, temp);
+        
+        /* R = H * R */
+        pre_multiply(R, H, size, temp);
+    }
+    
+    /* Frees memory */
+    free(H);
+    free(v);
+    free(temp);
+}
+
+
+
+static double
+get_alpha(const unsigned int k, const unsigned int size, const double T[]) {
+    unsigned int j;
+    double res = 0.0;
+    
+    for (j = k; j < size; ++j) {
+        res += T[j * size + k] * T[j * size + k];
+    }
+    res = sqrt(res); 
+    
+    return (T[k * size + k] > 1e-6) ? -res : res;
+}
+
+
+
+static void
+get_v(double v[], const unsigned int k, const unsigned int size, const double T[], const double alpha) {
+    unsigned int i;
+
+    memset(v, 0, k * sizeof(double));
+    
+    v[k] = -T[k * size + k] + alpha;
+    
+    for (i = k + 1; i < size; ++i) {
+        v[i] = -T[i * size + k];
+    }
+}
+
+
+
+static double
+get_norm_v(const double v[], const unsigned int k, const unsigned int size) {
+    unsigned int i;
+    double ret;
+    
+    for (i = k; i < size; ++i) {
+        ret += v[i] * v[i];
+    }
+    
+    return sqrt(ret);
+}
+
+
+
+static void
+get_q(double Q[], const unsigned int size, const double v[]) {
+    unsigned int i;
+
+    matrix_multiply(Q, v, v, size, size, 1);
+    for(i = 0; i < size * size; ++i) {
+        Q[i] *= -2;
+    }
+    for (i = 0; i < size; ++i) {
+        Q[i * size + i] += 1;
+    }
+}
+
+
+
 static double
 compute_sigma(const double M[], const unsigned int size) {
     const double a_1 = M[(size - 2) * size + size - 2],
@@ -148,111 +326,8 @@ compute_sigma(const double M[], const unsigned int size) {
 
 
 
-/**
- * Computes cosine and sine of a rotation angle.
- * Angle is chosen such that a Givens rotation will set b to zero.
- * @param[out] c Cosine of the angle
- * @param[out] s Sine of the angle
- * @param[in]  a First value
- * @param[in]  b Second value
- */
-static void
-givens(double *c, double *s, const double a, const double b) {
-    const double t = b / a;
-    *c = 1 / sqrt(1 + t * t);
-    *s = *c * t;
-}
-
-
-
-/**
- * Computes a Givens rotation matrix.
- * G_ij will be the Givens rotation matrix which will rotate the i-th
- * and j-th element of a vector clockwise by an angle theta such that
- * cos(theta) = c and sin(theta) = s.
- * @param[out] G_ij Givens rotation matrix
- * @param[in]  size Size of the matrix
- * @param[in]  i    First index
- * @param[in]  j    Second index
- * @param[in]  c    Cosine of the rotation angle
- * @param[in]  s    Sine of the rotation angle
- */
-static void G(
-    double G_ij[], const unsigned int size,
-    const unsigned int i, const unsigned int j,
-    const double c, const double s) {
-    unsigned int k;
-
-    /* G_ij = I */
-    memset(G_ij, 0, size * size * sizeof(double));
-    for (k = 0; k < size; ++k) {
-        G_ij[k * size + k] = 1.0;
-    }
-
-    G_ij[i * size + i] = c;
-    G_ij[i * size + j] = s;
-    G_ij[j * size + i] = -s;
-    G_ij[j * size + j] = c;
-}
-
-
-
-/**
- * QR decomposition: A = Q * R.
- * Uses Givens' rotation to obtain the QR decomposition of a matrix.
- * Assumes input matrix is a tridiagonal matrix.
- * @param[out] Q    Orthonormal matrix
- * @param[out] R    Upper triangular matrix
- * @param[in]  A    Input matrix
- * @param[in]  size Size of the matrix
- */
-static void
-QR(double Q[], double R[], const double A[], const unsigned int size) {
-    unsigned int i;
-    double c, s, *G_i, *buffer;
-
-
-    SAFE_MALLOC(G_i, double *, size * size * sizeof(double));
-    SAFE_MALLOC(buffer, double *, size * size * sizeof(double));
-
-
-    /* Q' = I */
-    memset(Q, 0, size * size * sizeof(double));
-    for (i = 0; i < size; ++i) {
-        Q[i * size + i] = 1.0;
-    }
-
-    /* R = A */
-    memcpy(R, A, size * size * sizeof(double));
-
-
-    /* Rotates matrix, setting to 0 every element in the subdiagonal */
-    for (i = 0; i < size - 1; ++i) {
-        if (fabs(R[(i + 1) * size + i]) < EPSILON) continue;
-
-        givens(&c, &s, R[i * size + i], R[(i + 1) * size + i]);
-        G(G_i, size, i, i + 1, c, s);
-        
-        /* Q' = G_i * Q' */
-        matrix_multiply(buffer, G_i + i * size, Q, 2, size, size);
-        memcpy(Q + i * size, buffer, 2 * size * sizeof(double));
-        
-        /* R = G_i * R */
-        matrix_multiply(buffer, G_i + i * size, R, 2, size, size);
-        memcpy(R + i * size, buffer, 2 * size * sizeof(double));
-    }
-    matrix_transpose(Q, size, size);
-
-
-    /* Frees memory */
-    free(G_i);
-    free(buffer);
-}
-
-
-
 void
-qr_iterative(const st_matrix_t M, double *eigenvalues, double *eigenvectors) {
+qr_householder(const st_matrix_t M, double *eigenvalues, double *eigenvectors) {
     double *T, *Q, *R;
     unsigned int i;
     const unsigned int size = st_matrix_size(M);
@@ -278,7 +353,7 @@ qr_iterative(const st_matrix_t M, double *eigenvalues, double *eigenvectors) {
             T[i * size + i] -= sigma;
         }
 
-        QR(Q, R, T, size);
+        qr(Q, R, size, T);
         tridiagonal_multiply(T, R, Q, size);
         
 
