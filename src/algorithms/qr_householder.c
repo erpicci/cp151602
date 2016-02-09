@@ -288,7 +288,7 @@ get_v(double v[], const unsigned int k, const unsigned int size, const double T[
 static double
 get_norm_v(const double v[], const unsigned int k, const unsigned int size) {
     unsigned int i;
-    double ret;
+    double ret = 0.0;
     
     for (i = k; i < size; ++i) {
         ret += v[i] * v[i];
