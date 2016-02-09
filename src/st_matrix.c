@@ -23,6 +23,7 @@
  * @copyright GNU GPLv3 <http://www.gnu.org/licenses/gpl-3.0.txt>
  */
 #include <stdlib.h>
+#include <string.h>
 
 #include "st_matrix.h"
 #include "utils.h"
@@ -157,6 +158,26 @@ st_matrix_t st_matrix_save(const st_matrix_t M, FILE *fp) {
     fprintf(fp, "\n");
     for (i = 0; i < size - 1; ++i) {
         fprintf(fp, "%g ", subdiag[i]);
+    }
+
+    return M;
+}
+
+
+
+st_matrix_t st_matrix_to_dense(const st_matrix_t M, double dst[]) {
+    unsigned int i;
+    const unsigned int size = st_matrix_size(M);
+    double *diag    = st_matrix_diag(M),
+           *subdiag = st_matrix_subdiag(M);
+
+    memset(dst, 0, size * size * sizeof(double));
+    for (i = 0; i < size; ++i) {
+        dst[i * size + i] = diag[i];
+    }
+    for (i = 0; i < size - 1; ++i) {
+        dst[(i + 1) * size + i] = subdiag[i];
+        dst[i * size + i + 1]   = subdiag[i];
     }
 
     return M;

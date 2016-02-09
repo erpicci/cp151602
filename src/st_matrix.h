@@ -108,4 +108,13 @@ st_matrix_t st_matrix_load(FILE *fp);
  */
 st_matrix_t st_matrix_save(const st_matrix_t M, FILE *fp);
 
+
+/**
+ * Converts a symmetric tridiagonal matrix to dense representation.
+ * @param[in]  M   Symmetric tridiagonal matrix
+ * @param[out] dst Destination array for dense matrix
+ * @return M itself
+ */
+st_matrix_t st_matrix_to_dense(const st_matrix_t M, double dst[]);
+
 #endif  /* _ST_MATRIX_H_ */

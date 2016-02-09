@@ -90,7 +90,7 @@ is_diagonal(const double M[], const unsigned int n) {
 
     for (i = 0; i < n; ++i) {
         for (j = 0; j < n; ++j) {
-            if (i != j && fabs(M[i * n + j]) < EPSILON) {
+            if (i != j && fabs(M[i * n + j]) > EPSILON) {
                 return 0;
             }
         }
