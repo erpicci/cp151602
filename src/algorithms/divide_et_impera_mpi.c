@@ -255,7 +255,6 @@ eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigne
             lambda, count, disp, MPI_DOUBLE,
             ROOT, MPI_COMM_WORLD);
 
-        MPI_Barrier(MPI_COMM_WORLD);
         
         
         free(count);
@@ -380,7 +379,6 @@ eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigne
             
             free(D);
             free(usqr);
-            MPI_Barrier(MPI_COMM_WORLD);
         }
     }
 }
