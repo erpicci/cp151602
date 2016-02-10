@@ -38,6 +38,39 @@
 
 
 
+static void print_row(const double row[], const unsigned int n) {
+    unsigned int i;
+    for (i = 0; i < n; ++i) {
+        printf(" %g ", row[i]);
+    }
+    printf("\n");
+}
+
+static void print_matrix(const double M[], const unsigned int m, const unsigned int n) {
+    unsigned int i;
+
+    printf("[\n");
+    for (i = 0; i < m; ++i) {
+        print_row(M + i * n, n);
+    }
+    printf("\n]\n");
+}
+
+static void print_tridiag(const double d[], const double e[], const unsigned int n) {
+    st_matrix_t stm = st_matrix_create(n);
+    double *M;
+
+    SAFE_MALLOC(M, double *, n * n * sizeof(double));
+    memcpy(st_matrix_diag(stm), d, n * sizeof(double));
+    memcpy(st_matrix_subdiag(stm), e, (n - 1) * sizeof(double));
+
+
+    st_matrix_to_dense(stm, M);
+    print_matrix(M, n, n);
+}
+
+
+
 /** Parameters for the secular equation. */
 struct params_s {
     unsigned int n;  /**< Size of the matrix */
@@ -128,6 +161,94 @@ void merge(
 
 
 
+
+
+
+
+
+
+static void
+conquer(
+    double lambda[], double Q[], const double rho,
+    const double L1[], const double Q1[], const unsigned int n1,
+    const double L2[], const double Q2[], const unsigned int n2) {
+    const unsigned int n = n1 + n2;
+    unsigned int i, j;
+    double *u1, *u2, *D, *u, *usqr, *Qp, *alpha = lambda;
+    struct params_s params;
+
+    SAFE_MALLOC(u1, double *, n1 * sizeof(double));
+    SAFE_MALLOC(u2, double *, n2 * sizeof(double));
+    SAFE_MALLOC(D, double *, n * sizeof(double));
+    SAFE_MALLOC(u, double *, n * sizeof(double));
+    SAFE_MALLOC(usqr, double *, n * sizeof(double));
+    SAFE_MALLOC(Qp, double *, n * n * sizeof(double));
+
+
+
+    /* u = [+- last row of Q1, first row of Q2] */
+    for (i = 0; i < n1; i++) {
+        u1[i] = sign(rho) * Q1[(n1 != 1) * n1 + i];
+    }
+    memcpy(u2, Q2, n2 * sizeof(double));
+
+
+    /* Finds eigenvalues of D + rho * u * u' */
+    merge(D, u, L1, u1, n1, L2, u2, n2);
+    for (i = 0; i < n; ++i) {
+        usqr[i] = u[i] * u[i];
+    }
+    params.n    = n;
+    params.rho  = fabs(rho);
+    params.d    = D;
+    params.usqr = usqr;
+
+    for (i = 1; i < n; ++i) {
+        lambda[i] = bisection(D[i], D[i - 1], secular_function, &params);
+    }
+    lambda[0] = bisection(D[0], DBL_MAX, secular_function, &params);
+    /* END */
+
+
+    /* D = [L1 0; 0 L2] */
+    memcpy(D, L1, n1 * sizeof(double));
+    memcpy(D + n1, L2, n2 * sizeof(double));
+
+
+    /* u = [u1 u2] */
+    memcpy(u, u1, n1 * sizeof(double));
+    memcpy(u + n1, u2, n2 * sizeof(double));
+
+
+    /* Finds eigenvectors Qprime of D + rho * u * u' */
+    for (i = 0; i < n; i++) {
+        double norm = 0.0;
+        for (j = 0; j < n; j++) {
+            double e = u[j] / (D[j] - alpha[i]);
+            Qp[j * n + i] = e;
+            norm += e * e;
+        }
+        norm = 1.0 / sqrt(norm);
+        for (j = 0; j < n; ++j) {
+            Qp[j * n + i] *= norm;
+        }
+    }
+
+
+    /* Computes eigenvectors as [Q1 0; 0 Q2] * Qprime (only first and last) */
+    matrix_multiply(Q, Q1, Qp, 1, n, n1);
+    matrix_multiply(Q + n, Q2 + (n2 != 1) * n2, Qp + n1 * n, 1, n, n2);
+}
+
+
+
+
+
+
+
+
+
+
 /**
  * Computes eigenvalues and eigenvectors of a symmetric tridiagonal matrix.
  * Computation is recursive with a divide et impera approach.
@@ -141,249 +262,158 @@ void merge(
  */
 static void
 eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigned int n) {
-    int mpi_rank, mpi_size;
-    
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-    
-    
-        /* Base case: n = 1 */
-        if (n == 1) {
-            *lambda = *d;
-            *Q      = 1.0;
-            return;
-        }
+    /* Base case: n = 1 */
+    if (n == 1) {
+        *lambda = *d;
+        *Q      = 1.0;
+        return;
+    }
 
-        /* Recursive case: n > 1 */
-        {
-        unsigned int i, j;
-        const unsigned int n1 = n / 2,
-                        n2 = n - n1;
-        double *alpha = lambda,
-            *L1, *Q1, *u1,
-            *L2, *Q2, *u2,
-            *Qp,
-            *D, *u, *usqr;
-        const double rho = e[n1 - 1];
-        struct params_s params;
+    /* Recursive case: n > 1 */
+    {
+    const unsigned int n1 = n / 2,
+                       n2 = n - n1;
+    const double rho      = e[n1 - 1];
+    double *L1, *Q1, *L2, *Q2;
 
-        SAFE_MALLOC(L1, double *, n1 * sizeof(double));
-        SAFE_MALLOC(Q1, double *, 2 * n1 * sizeof(double));
-        SAFE_MALLOC(L2, double *, n2 * sizeof(double));
-        SAFE_MALLOC(Q2, double *, 2 * n2 * sizeof(double));
-        SAFE_MALLOC(u1, double *, n1 * sizeof(double));
-        SAFE_MALLOC(u2, double *, n2 * sizeof(double));
-        SAFE_MALLOC(D, double *, n * sizeof(double));
-        SAFE_MALLOC(u, double *, n * sizeof(double));
-        SAFE_MALLOC(usqr, double *, n * sizeof(double));
-        SAFE_MALLOC(Qp, double *, n * n * sizeof(double));
+    SAFE_MALLOC(L1, double *, n1 * sizeof(double));
+    SAFE_MALLOC(Q1, double *, 2 * n1 * sizeof(double));
+    SAFE_MALLOC(L2, double *, n2 * sizeof(double));
+    SAFE_MALLOC(Q2, double *, 2 * n2 * sizeof(double));
 
 
-        /* [Qi, Li] = eigen(Ti) */
-        d[n1 - 1] -= fabs(rho);
-        d[n1]     -= fabs(rho);
+    /* [Qi, Li] = eigen(Ti) */
+    d[n1 - 1] -= fabs(rho);
+    d[n1]     -= fabs(rho);
 
-        eig_rec(L1, Q1, d, e, n1);
-        eig_rec(L2, Q2, d + n1, e + n1, n2);
+    eig_rec(L1, Q1, d, e, n1);
+    eig_rec(L2, Q2, d + n1, e + n1, n2);
 
-        d[n1 - 1] += fabs(rho);
-        d[n1]     += fabs(rho);
-
-
-        /* u = [+- last row of Q1, first row of Q2] */
-        for (i = 0; i < n1; i++) {
-            u1[i] = sign(rho) * Q1[(n1 != 1) * n1 + i];
-        }
-        memcpy(u2, Q2, n2 * sizeof(double));
+    d[n1 - 1] += fabs(rho);
+    d[n1]     += fabs(rho);
 
 
-        /* Finds eigenvalues of D + rho * u * u' */
-        merge(D, u, L1, u1, n1, L2, u2, n2);
-        for (i = 0; i < n; ++i) {
-            usqr[i] = u[i] * u[i];
-        }
-        params.n    = n;
-        params.rho  = fabs(rho);
-        params.d    = D;
-        params.usqr = usqr;
 
-        /*
-         * root --broadcast--> n, rho, D, usqr
-         * every node: computes some evals
-         * root <--gather-- evals
-         */
-        /**************************************************************/
-        if (n > 2 * (unsigned int) mpi_size) {
-            int *count, *disp;
-            unsigned int how_many;
-            
-            MPI_Bcast((unsigned int *) &n, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
-            MPI_Bcast((double *) &rho, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
-            MPI_Bcast(D, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
-            MPI_Bcast(usqr, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
-            
-            
-            
-            SAFE_MALLOC(count, int *, mpi_size * sizeof(int));
-            SAFE_MALLOC(disp,  int *, mpi_size * sizeof(int));
-            
-            
-            for (i = 0; i < (unsigned int) mpi_size; ++i) {
-                unsigned int avg = n / mpi_size,
-                            ext = n % mpi_size;
-                count[i] = avg + (i < ext);
-                disp[i]  = (i < ext)
-                        ? i * (avg + 1)
-                        : ext * (avg + 1) + (i - ext) * avg;
-            }
-            
-            how_many = count[mpi_rank];
-            
-            for (i = 1; i < how_many; ++i) {
-                lambda[i] = bisection(D[i], D[i - 1], secular_function, &params);
-                /*printf("Eigenvalue: %g\n", lambda[i]);*/
-            }
-            lambda[0] = bisection(D[0], DBL_MAX, secular_function, &params);
-            
-            MPI_CALL(MPI_Gatherv(lambda, how_many, MPI_DOUBLE,
-                lambda, count, disp, MPI_DOUBLE,
-                ROOT, MPI_COMM_WORLD));
+    conquer(lambda, Q, rho, L1, Q1, n1, L2, Q2, n2);
 
-            
-            
-            free(count);
-            free(disp);
-        }
-        else {
-            for (i = 1; i < n; ++i) {
-                lambda[i] = bisection(D[i], D[i - 1], secular_function, &params);
-            }
-            lambda[0] = bisection(D[0], DBL_MAX, secular_function, &params);
-        }
-        
-        /* END */
-
-
-        /* D = [L1 0; 0 L2] */
-        memcpy(D, L1, n1 * sizeof(double));
-        memcpy(D + n1, L2, n2 * sizeof(double));
-
-
-        /* u = [u1 u2] */
-        memcpy(u, u1, n1 * sizeof(double));
-        memcpy(u + n1, u2, n2 * sizeof(double));
-
-
-        /* Finds eigenvectors Qprime of D + rho * u * u' */
-        for (i = 0; i < n; i++) {
-            double norm = 0.0;
-            for (j = 0; j < n; j++) {
-                double e = u[j] / (D[j] - alpha[i]);
-                Qp[j * n + i] = e;
-                norm += e * e;
-            }
-            norm = 1.0 / sqrt(norm);
-            for (j = 0; j < n; ++j) {
-                Qp[j * n + i] *= norm;
-            }
-        }
-
-
-        /* Computes eigenvectors as [Q1 0; 0 Q2] * Qprime (only first and last) */
-        matrix_multiply(Q, Q1, Qp, 1, n, n1);
-        matrix_multiply(Q + n, Q2 + (n2 != 1) * n2, Qp + n1 * n, 1, n, n2);
-
-
-        /* Frees memory */
-        free(L1);
-        free(L2);
-        free(Q1);
-        free(Q2);
-        free(u1);
-        free(u2);
-        free(u);
-        free(usqr);
-        free(D);
-        free(Qp);
-        }
+    /* Frees memory */
+    free(L1);
+    free(L2);
+    free(Q1);
+    free(Q2);
+    }
 }
 
 
 
 void divide_et_impera_mpi(const st_matrix_t M, double *eigenvalues) {
     int mpi_rank, mpi_size;
+    int *count, *displ, *displ2, i;
+    unsigned int n = st_matrix_size(M);
+    double *D, *d, *e;
+    double *evecs, *Q;
+    int avg, ext;
     
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-    
-    /* Master node: divide et impera */
-    if (ROOT == mpi_rank) {
-        const unsigned int n = st_matrix_size(M),
-                           stop = 0;
-        double *d = st_matrix_diag(M),
-               *e = st_matrix_subdiag(M);
-        double *evecs;
 
-        /* Share max size */
-        MPI_Bcast((unsigned int *) &n, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
-        
-        SAFE_MALLOC(evecs, double *, n * n * sizeof(double));
-        eig_rec(eigenvalues, evecs, d, e, n);
-        free(evecs);
-        
-        /* Sends stop message */
-        MPI_Bcast((unsigned int *) &stop, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
+
+    /* Shares size of the problem */
+    MPI_Bcast(&n, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
+
+
+    /* Every node computes how many elements it will work on */
+    SAFE_MALLOC(count,  int *, mpi_size * sizeof(int));
+    SAFE_MALLOC(displ,  int *, mpi_size * sizeof(int));
+    SAFE_MALLOC(displ2, int *, mpi_size * sizeof(int));
+
+    avg = n / mpi_size;
+    ext = n % mpi_size;
+    count[0] = avg + (0 < ext);
+    displ[0] = 0;
+    displ2[0] = 0;
+    for (i = 1; i < mpi_size; ++i) {
+        count[i] = avg + (i < ext);
+        displ[i] = displ[i - 1] + count[i - 1];
+        displ2[i] = 2 * displ[i];
     }
+
+
+
+
     
-    /* Slaves node: wait for requests */
-    else {
-        double rho, *lambda, *D, *usqr;
-        unsigned int max_size, n;
-        
-        MPI_Bcast(&max_size, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
-        
-        SAFE_MALLOC(lambda, double *, max_size * sizeof(double));
-        SAFE_MALLOC(D, double *, max_size * sizeof(double));
-        SAFE_MALLOC(usqr, double *, max_size * sizeof(double));
-        
-        while (1) {
-            int avg, ext;
-            unsigned int i, how_many, idx, cursor = 0;
-            struct params_s params;
+    /* Master node: modify matrix */
+    if (ROOT == mpi_rank) {
+        d = st_matrix_diag(M);
+        e = st_matrix_subdiag(M);
 
-            /* Receives size of the work */
-            MPI_Bcast((unsigned int *) &n, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
+        SAFE_MALLOC(D,  double *, n * sizeof(double));
+        SAFE_MALLOC(Q,  double *, mpi_size * 2 * n * sizeof(double));
 
-            /* Exits if there is no more work */
-            if (!n) {
-                break;
-            }
-            
-            /* Receives data: rho, D and usqr */
-            MPI_Bcast(&rho, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
-            MPI_Bcast(D, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
-            MPI_Bcast(usqr, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
-            
-            params.n    = n;
-            params.rho  = fabs(rho);
-            params.d    = D;
-            params.usqr = usqr;
-
-            /* Computes offsets */
-            avg = n / mpi_size;
-            ext = n % mpi_size;
-            how_many = avg + (mpi_rank < ext);
-            idx      = (mpi_rank < ext)
-                     ? mpi_rank * (avg + 1)
-                     : ext * (avg + 1) + (mpi_rank - ext) * avg;
-
-            /* Computes eigenvalues */
-            for (i = idx; i < idx + how_many; ++i) {
-                lambda[cursor++] = bisection(D[i], D[i - 1], secular_function, &params);
-            }
-            
-            /* Sends results to master node */
-            MPI_CALL(MPI_Gatherv(lambda, how_many, MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE, ROOT, MPI_COMM_WORLD));
+        for (i = 0; i < mpi_size - 1; ++i) {
+            double rho = fabs(e[displ[i + 1] - 1]);
+            d[displ[i + 1] - 1] -= rho;
+            d[displ[i + 1]]     -= rho;
         }
     }
+
+    /* Slave nodes: prepare to receive data */
+    else {
+        SAFE_MALLOC(d, double *, count[mpi_rank] * sizeof(double));
+        SAFE_MALLOC(e, double *, count[mpi_rank] * sizeof(double));
+        SAFE_MALLOC(eigenvalues, double *, count[mpi_rank] * sizeof(double));
+    }
+
+
+
+    /* DIVIDE */
+    /* Shares modified matrix, every node works on its portion */
+    MPI_Scatterv(d, count, displ, MPI_DOUBLE, d, count[mpi_rank], MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+    MPI_Scatterv(e, count, displ, MPI_DOUBLE, e, count[mpi_rank], MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+    SAFE_MALLOC(evecs, double *, n * n * sizeof(double));
+    eig_rec(eigenvalues, evecs, d, e, count[mpi_rank]);
+
+    /* Restores original matrix */
+    if (ROOT == mpi_rank) {
+        for (i = 0; i < mpi_size - 1; ++i) {
+            double rho = fabs(e[displ[i] + count[i] - 1]);
+            d[displ[i] + count[i] - 1] += rho;
+            d[displ[i + 1]] += rho;
+        }
+    }
+
+
+
+
+
+    /* Additional merge phase */
+    MPI_Gatherv(eigenvalues, count[mpi_rank], MPI_DOUBLE,
+                D, count, displ, MPI_DOUBLE,
+                ROOT, MPI_COMM_WORLD);
+
+    MPI_Gatherv(evecs, count[mpi_rank], MPI_DOUBLE,
+                Q, count, displ2, MPI_DOUBLE,
+                ROOT, MPI_COMM_WORLD);
+    MPI_Gatherv(evecs + count[mpi_rank], count[mpi_rank], MPI_DOUBLE,
+                Q + count[ROOT], count, displ2, MPI_DOUBLE,
+                ROOT, MPI_COMM_WORLD);
+
+
+    if (ROOT == mpi_rank) {
+    unsigned int c_n = count[0];
+
+    for (i = 0; i < mpi_size - 1; ++i) {
+        double rho = e[displ[i + 1] - 1];
+
+        conquer(D, Q, rho,
+            D, Q, c_n,
+            D + displ[i + 1], Q + displ2[i + 1], count[i + 1]);
+        c_n += count[i + 1];
+    }
+    memcpy(eigenvalues, D, n * sizeof(double));
+
+    }
+
+
+
 }
