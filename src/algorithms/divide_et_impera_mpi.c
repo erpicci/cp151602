@@ -146,7 +146,7 @@ eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigne
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     
-    if (ROOT == mpi_rank) {
+    
         /* Base case: n = 1 */
         if (n == 1) {
             *lambda = *d;
@@ -212,60 +212,53 @@ eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigne
          * every node: computes some evals
          * root <--gather-- evals
          */
-        if (n > 10) {
-        int *count, *disp;
-        unsigned int how_many, idx;
-        
-        
-        MPI_Bcast((unsigned int *) &n, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
-        MPI_Bcast((double *) &rho, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
-        MPI_Bcast(D, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
-        MPI_Bcast(usqr, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
-        
-        
-        
-        SAFE_MALLOC(count, int *, mpi_size * sizeof(int));
-        SAFE_MALLOC(disp,  int *, mpi_size * sizeof(int));
-        
-        
-        for (i = 0; i < mpi_size; ++i) {
-            unsigned int avg = n / mpi_size,
-                         ext = n % mpi_size;
-            count[i] = avg + (i < ext);
-            disp[i]  = (i < ext)
-                     ? i * (avg + 1)
-                     : ext * (avg + 1) + (i - ext) * avg;
-        }
-        
-        how_many = count[mpi_rank];
-        idx      = disp[mpi_rank];
-        /*printf("rank, %d: do [%u, %u]: %u\n", mpi_rank, idx, idx + how_many, how_many);*/
-        
-        
-        
-        for (i = 1; i < how_many; ++i) {
-            lambda[i] = bisection(D[i], D[i - 1], secular_function, &params);
-            /*printf("Eigenvalue: %g\n", lambda[i]);*/
-        }
-        lambda[0] = bisection(D[0], DBL_MAX, secular_function, &params);
-        /*printf("Eigenvalue: %g\n", lambda[0]);*/
-        
-        
-        MPI_Gatherv(lambda, how_many, MPI_DOUBLE,
-            lambda, count, disp, MPI_DOUBLE,
-            ROOT, MPI_COMM_WORLD);
+        /**************************************************************/
+        if (n > 2 * (unsigned int) mpi_size) {
+            int *count, *disp;
+            unsigned int how_many;
+            
+            MPI_Bcast((unsigned int *) &n, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
+            MPI_Bcast((double *) &rho, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+            MPI_Bcast(D, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+            MPI_Bcast(usqr, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+            
+            
+            
+            SAFE_MALLOC(count, int *, mpi_size * sizeof(int));
+            SAFE_MALLOC(disp,  int *, mpi_size * sizeof(int));
+            
+            
+            for (i = 0; i < (unsigned int) mpi_size; ++i) {
+                unsigned int avg = n / mpi_size,
+                            ext = n % mpi_size;
+                count[i] = avg + (i < ext);
+                disp[i]  = (i < ext)
+                        ? i * (avg + 1)
+                        : ext * (avg + 1) + (i - ext) * avg;
+            }
+            
+            how_many = count[mpi_rank];
+            
+            for (i = 1; i < how_many; ++i) {
+                lambda[i] = bisection(D[i], D[i - 1], secular_function, &params);
+                /*printf("Eigenvalue: %g\n", lambda[i]);*/
+            }
+            lambda[0] = bisection(D[0], DBL_MAX, secular_function, &params);
+            
+            MPI_CALL(MPI_Gatherv(lambda, how_many, MPI_DOUBLE,
+                lambda, count, disp, MPI_DOUBLE,
+                ROOT, MPI_COMM_WORLD));
 
-        
-        
-        free(count);
-        free(disp);
+            
+            
+            free(count);
+            free(disp);
         }
         else {
-        for (i = 1; i < n; ++i) {
-            lambda[i] = bisection(D[i], D[i - 1], secular_function, &params);
-        }
-        lambda[0] = bisection(D[0], DBL_MAX, secular_function, &params);
-        
+            for (i = 1; i < n; ++i) {
+                lambda[i] = bisection(D[i], D[i - 1], secular_function, &params);
+            }
+            lambda[0] = bisection(D[0], DBL_MAX, secular_function, &params);
         }
         
         /* END */
@@ -313,83 +306,17 @@ eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigne
         free(D);
         free(Qp);
         }
-    }
-    
-    
-    else {
-        while (1) {
-            unsigned int i;
-            double rho, *D, *usqr;
-            int *count, *disp;
-            struct params_s params;
-            unsigned int how_many, idx, cursor = 0;
-            double *lambda;
-        
-        
-            MPI_Bcast((unsigned int *) &n, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
-        
-            /*printf("I'm nothing but a humble slave. My rank is %d, n is %u\n", mpi_rank, n);*/
-            if (0 == n) {
-                /*printf("I will die soon...\n");*/
-                break;
-            }
-            
-            
-            SAFE_MALLOC(D, double *, n * sizeof(double));
-            SAFE_MALLOC(usqr, double *, n * sizeof(double));
-            MPI_Bcast(&rho, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
-            MPI_Bcast(D, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
-            MPI_Bcast(usqr, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
-            
-            SAFE_MALLOC(count, int *, mpi_size * sizeof(int));
-            SAFE_MALLOC(disp,  int *, mpi_size * sizeof(int));
-        
-        
-            for (i = 0; i < mpi_size; ++i) {
-                unsigned int avg = n / mpi_size,
-                            ext = n % mpi_size;
-                count[i] = avg + (i < ext);
-                disp[i]  = (i < ext)
-                        ? i * (avg + 1)
-                        : ext * (avg + 1) + (i - ext) * avg;
-            }
-            how_many = count[mpi_rank];
-            idx      = disp[mpi_rank];
-            
-            /*printf("rank, %d: do [%u, %u]: %u\n", mpi_rank, idx, idx + how_many - 1, how_many);*/
-            
-            params.n    = n;
-            params.rho  = fabs(rho);
-            params.d    = D;
-            params.usqr = usqr;
-            
-            
-            SAFE_MALLOC(lambda, double *, how_many * sizeof(double));
-            for (i = idx; i < idx + how_many; ++i) {
-                lambda[cursor] = bisection(D[i], D[i - 1], secular_function, &params);
-                /*printf("Eigenvalue: %g\n", lambda[cursor]);*/
-                cursor++;
-            }
-            
-            
-            MPI_Gatherv(lambda, how_many, MPI_DOUBLE,
-            NULL, NULL, NULL, MPI_DOUBLE,
-            ROOT, MPI_COMM_WORLD);
-            
-            
-            free(D);
-            free(usqr);
-        }
-    }
 }
 
 
 
 void divide_et_impera_mpi(const st_matrix_t M, double *eigenvalues) {
-    int mpi_rank;
+    int mpi_rank, mpi_size;
     
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     
+    /* Master node: divide et impera */
     if (ROOT == mpi_rank) {
         const unsigned int n = st_matrix_size(M),
                            stop = 0;
@@ -397,13 +324,66 @@ void divide_et_impera_mpi(const st_matrix_t M, double *eigenvalues) {
                *e = st_matrix_subdiag(M);
         double *evecs;
 
+        /* Share max size */
+        MPI_Bcast((unsigned int *) &n, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
+        
         SAFE_MALLOC(evecs, double *, n * n * sizeof(double));
         eig_rec(eigenvalues, evecs, d, e, n);
         free(evecs);
         
+        /* Sends stop message */
         MPI_Bcast((unsigned int *) &stop, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
     }
+    
+    /* Slaves node: wait for requests */
     else {
-        eig_rec(NULL, NULL, NULL, NULL, 0);
+        double rho, *lambda, *D, *usqr;
+        unsigned int max_size, n;
+        
+        MPI_Bcast(&max_size, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
+        
+        SAFE_MALLOC(lambda, double *, max_size * sizeof(double));
+        SAFE_MALLOC(D, double *, max_size * sizeof(double));
+        SAFE_MALLOC(usqr, double *, max_size * sizeof(double));
+        
+        while (1) {
+            int avg, ext;
+            unsigned int i, how_many, idx, cursor = 0;
+            struct params_s params;
+
+            /* Receives size of the work */
+            MPI_Bcast((unsigned int *) &n, 1, MPI_UNSIGNED, ROOT, MPI_COMM_WORLD);
+
+            /* Exits if there is no more work */
+            if (!n) {
+                break;
+            }
+            
+            /* Receives data: rho, D and usqr */
+            MPI_Bcast(&rho, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+            MPI_Bcast(D, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+            MPI_Bcast(usqr, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+            
+            params.n    = n;
+            params.rho  = fabs(rho);
+            params.d    = D;
+            params.usqr = usqr;
+
+            /* Computes offsets */
+            avg = n / mpi_size;
+            ext = n % mpi_size;
+            how_many = avg + (mpi_rank < ext);
+            idx      = (mpi_rank < ext)
+                     ? mpi_rank * (avg + 1)
+                     : ext * (avg + 1) + (mpi_rank - ext) * avg;
+
+            /* Computes eigenvalues */
+            for (i = idx; i < idx + how_many; ++i) {
+                lambda[cursor++] = bisection(D[i], D[i - 1], secular_function, &params);
+            }
+            
+            /* Sends results to master node */
+            MPI_CALL(MPI_Gatherv(lambda, how_many, MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE, ROOT, MPI_COMM_WORLD));
+        }
     }
 }
