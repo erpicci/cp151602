@@ -39,10 +39,10 @@
  * @retval EXIT_SUCCESS Normal termination of the program
  * @retval EXIT_FAILURE Some error occurred
  */
-int main(const int argc, char * const argv[]) {
+int main(int argc, char **argv) {
     int mpi_rank;
 
-    MPI_Init((int *) &argc, (char ***) &argv);
+    MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     
     
