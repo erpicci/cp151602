@@ -227,6 +227,113 @@ conquer(
 
 
 
+static void
+multi_conquer_master(
+    double lambda[], const int count[], const int displ[], const double rho,
+    const double L1[], const double Q1[], const unsigned int n1,
+    const double L2[], const double Q2[], const unsigned int n2) {
+    const unsigned int n = n1 + n2;
+    unsigned int i;
+    double *u1, *u2, *D, *u, *usqr;
+    struct params_s params;
+
+    SAFE_MALLOC(u1, double *, n1 * sizeof(double));
+    SAFE_MALLOC(u2, double *, n2 * sizeof(double));
+    SAFE_MALLOC(D, double *, (n + 1) * sizeof(double));
+    SAFE_MALLOC(u, double *, n * sizeof(double));
+    SAFE_MALLOC(usqr, double *, n * sizeof(double));
+
+
+
+    /* u = [+- last row of Q1, first row of Q2] */
+    for (i = 0; i < n1; i++) {
+        u1[i] = sign(rho) * Q1[(n1 != 1) * n1 + i];
+    }
+    memcpy(u2, Q2, n2 * sizeof(double));
+
+
+    /* Finds eigenvalues of D + rho * u * u' */
+    merge(D + 1, u, L1, u1, n1, L2, u2, n2);
+    for (i = 0; i < n; ++i) {
+        usqr[i] = u[i] * u[i];
+    }
+
+
+
+    D[0] = DBL_MAX;
+    MPI_Bcast((double *) &rho, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+    MPI_Bcast(D, n + 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+    MPI_Bcast(usqr, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+
+
+    params.n    = n;
+    params.rho  = fabs(rho);
+    params.d    = D + 1;
+    params.usqr = usqr;
+
+    for (i = 0; i < (unsigned int) count[ROOT]; ++i) {
+        lambda[i] = bisection(D[i + 1], D[i], secular_function, &params);
+    }
+
+    MPI_Gatherv(
+        lambda, count[ROOT], MPI_DOUBLE,
+        lambda, (int *) count, (int *) displ, MPI_DOUBLE,
+        ROOT, MPI_COMM_WORLD);
+
+
+
+    /* END */
+
+
+    /* Frees memory */
+    free(u1);
+    free(u2);
+    free(D);
+    free(u);
+    free(usqr);
+}
+
+
+
+static void
+multi_conquer_slave(const unsigned int n, const unsigned int count, const unsigned int disp) {
+    double rho, *D, *usqr, *lambda;
+    struct params_s params;
+    unsigned int i;
+
+    SAFE_MALLOC(D, double *, (n + 1) * sizeof(double));
+    SAFE_MALLOC(usqr, double *, n * sizeof(double));
+    SAFE_MALLOC(lambda, double *, count * sizeof(double));
+
+    MPI_Bcast(&rho, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+    MPI_Bcast(D, n + 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+    MPI_Bcast(usqr, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+
+
+    params.n    = n;
+    params.rho  = fabs(rho);
+    params.d    = D + 1;
+    params.usqr = usqr;
+
+    for (i = 0; i < count - 1; ++i) {
+        lambda[i] = bisection(D[i + disp + 1], D[i + disp], secular_function, &params);
+    }
+
+    MPI_Gatherv(
+        lambda, count - 1, MPI_DOUBLE,
+        NULL, NULL, NULL, MPI_DOUBLE,
+        ROOT, MPI_COMM_WORLD);
+
+
+
+    free(D);
+    free(usqr);
+    free(lambda);
+}
+
+
+
+
 
 
 
@@ -406,7 +513,8 @@ void divide_et_impera_mpi(const st_matrix_t M, double *eigenvalues) {
     /* Tree-shaped gathering */
     for (k = 1; k < mpi_size; k *= 2) {
         int is_sender = (mpi_rank & k) && (mpi_rank % k == 0),
-            is_recv   = !(mpi_rank & k) && (mpi_rank % k == 0) && (mpi_rank + k < mpi_size);
+            is_recv   = !(mpi_rank & k) && (mpi_rank % k == 0) && (mpi_rank + k < mpi_size),
+            is_last   = k * 2 >= mpi_size;
 
         /* Sends size, Li and Qi */
         if (is_sender) {
@@ -433,8 +541,22 @@ void divide_et_impera_mpi(const st_matrix_t M, double *eigenvalues) {
             MPI_Recv(Q2, 2 * n2, MPI_DOUBLE, from, 2, MPI_COMM_WORLD, &status);
 
             /* Merges results */
-            conquer(L, Q, rho, L1, Q1, n1, L2, Q2, n2);
-            n1 += n2;
+            if (!is_last) {
+                conquer(L, Q, rho, L1, Q1, n1, L2, Q2, n2);
+                n1 += n2;
+            }
+        }
+
+
+        /* Special speedup for last iteration */
+        if (is_last) {
+            if (ROOT == mpi_rank) {
+                const double rho = E[n1 - 1];
+                multi_conquer_master(L, count, displ, rho, L1, Q1, n1, L2, Q2, n2);
+            }
+            else {
+                multi_conquer_slave(n, count[mpi_rank] + 1, displ[mpi_rank]);
+            }
         }
     }
 
