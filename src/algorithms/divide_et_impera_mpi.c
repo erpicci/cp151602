@@ -224,9 +224,21 @@ conquer(
 
 
 
-
-
-
+/**
+ * Ad hoc conquer phase for master node.
+ * This can be used during last iteration to improve performance. Eigenvectors
+ * are not computed.
+ * @param[out] lambda Eigenvaluess
+ * @param[in]  count  Number of values to compute for each node
+ * @param[in]  displ  Dispacements
+ * @param[in]  rho    Rho
+ * @param[in]  L1     Eigenvalues of first sub-matrix
+ * @param[in]  Q1     First and last eigenvectors of first sub-matrix
+ * @param[in]  n1     Size of first sub-matrix
+ * @param[in]  L2     Eigenvalues of second sub-matrix
+ * @param[in]  Q2     First and last eigenvectors of second sub-matrix
+ * @param[in]  n2     Second submatrix
+ */
 static void
 multi_conquer_master(
     double lambda[], const int count[], const int displ[], const double rho,
@@ -244,7 +256,6 @@ multi_conquer_master(
     SAFE_MALLOC(usqr, double *, n * sizeof(double));
 
 
-
     /* u = [+- last row of Q1, first row of Q2] */
     for (i = 0; i < n1; i++) {
         u1[i] = sign(rho) * Q1[(n1 != 1) * n1 + i];
@@ -259,13 +270,13 @@ multi_conquer_master(
     }
 
 
-
+    /* Shares rho, D and usqr */
     D[0] = DBL_MAX;
     MPI_Bcast((double *) &rho, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
     MPI_Bcast(D, n + 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
     MPI_Bcast(usqr, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
 
-
+    /* Computes some eigenvalues */
     params.n    = n;
     params.rho  = fabs(rho);
     params.d    = D + 1;
@@ -275,14 +286,11 @@ multi_conquer_master(
         lambda[i] = bisection(D[i + 1], D[i], secular_function, &params);
     }
 
+    /* Gathers eigenvalues from other nodes */
     MPI_Gatherv(
         lambda, count[ROOT], MPI_DOUBLE,
         lambda, (int *) count, (int *) displ, MPI_DOUBLE,
         ROOT, MPI_COMM_WORLD);
-
-
-
-    /* END */
 
 
     /* Frees memory */
@@ -295,6 +303,13 @@ multi_conquer_master(
 
 
 
+/**
+ * Ad-hoc conquer phase for slave nodes.
+ * Waits for data to solve secular equation.
+ * @param[in] n     Total number of eigenvalues
+ * @param[in] count Number of values to compute
+ * @param[in] disp  Displacement
+ */
 static void
 multi_conquer_slave(const unsigned int n, const unsigned int count, const unsigned int disp) {
     double rho, *D, *usqr, *lambda;
@@ -305,26 +320,26 @@ multi_conquer_slave(const unsigned int n, const unsigned int count, const unsign
     SAFE_MALLOC(usqr, double *, n * sizeof(double));
     SAFE_MALLOC(lambda, double *, count * sizeof(double));
 
+    /* Receives rho, D and usqr */
     MPI_Bcast(&rho, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
     MPI_Bcast(D, n + 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
     MPI_Bcast(usqr, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
-
 
     params.n    = n;
     params.rho  = fabs(rho);
     params.d    = D + 1;
     params.usqr = usqr;
 
+    /* Computes some eigenvalues */
     for (i = 0; i < count - 1; ++i) {
         lambda[i] = bisection(D[i + disp + 1], D[i + disp], secular_function, &params);
     }
 
+    /* Sends back eigenvalues to master node */
     MPI_Gatherv(
         lambda, count - 1, MPI_DOUBLE,
         NULL, NULL, NULL, MPI_DOUBLE,
         ROOT, MPI_COMM_WORLD);
-
-
 
     free(D);
     free(usqr);
