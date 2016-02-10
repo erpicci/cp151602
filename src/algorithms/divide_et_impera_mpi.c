@@ -399,20 +399,169 @@ void divide_et_impera_mpi(const st_matrix_t M, double *eigenvalues) {
                 ROOT, MPI_COMM_WORLD);
 
 
+
     if (ROOT == mpi_rank) {
     unsigned int c_n = count[0];
+    double *L, *Qt;
+    SAFE_MALLOC(L, double * , n * sizeof(double));
+    SAFE_MALLOC(Qt, double * , 2 * n * sizeof(double));
 
+
+
+
+/*
     for (i = 0; i < mpi_size - 1; ++i) {
         double rho = e[displ[i + 1] - 1];
-
-        conquer(D, Q, rho,
+        conquer(L, Qt, rho,
             D, Q, c_n,
             D + displ[i + 1], Q + displ2[i + 1], count[i + 1]);
         c_n += count[i + 1];
+
+        memcpy(D, L, c_n * sizeof(double));
+        memcpy(Q, Qt, c_n * 2 * sizeof(double));
     }
     memcpy(eigenvalues, D, n * sizeof(double));
+*/
 
     }
+
+
+
+
+
+
+MPI_Barrier(MPI_COMM_WORLD);
+{
+int k;
+unsigned int n1 = count[mpi_rank];
+double *L, *Q, *E;
+SAFE_MALLOC(L, double *, n * sizeof(double));
+SAFE_MALLOC(E, double *, n * sizeof(double));
+SAFE_MALLOC(Q, double *, 2 * n * sizeof(double));
+
+
+memcpy(L, eigenvalues, count[mpi_rank] * sizeof(double));
+memcpy(Q, evecs, 2 * count[mpi_rank] * sizeof(double));
+
+
+
+
+
+if (ROOT == mpi_rank) {
+    memcpy(E, e, n * sizeof(double));
+}
+MPI_Bcast(E, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+
+
+for (k = 1; k < mpi_size; k *= 2) {
+    int is_sender = (mpi_rank & k) && (mpi_rank % k == 0),
+        is_recv   = !(mpi_rank & k) && (mpi_rank % k == 0) && (mpi_rank + k < mpi_size);
+
+    if (is_sender) {
+        int to  = mpi_rank - k;
+
+        MPI_Send(&n1, 1, MPI_UNSIGNED, to, 0, MPI_COMM_WORLD);
+        MPI_Send(L, n1, MPI_DOUBLE, to, 1, MPI_COMM_WORLD);
+        MPI_Send(Q, 2 * n1, MPI_DOUBLE, to, 2, MPI_COMM_WORLD);
+    }
+    else if (is_recv) {
+        int from = mpi_rank + k;
+        MPI_Status status;
+
+        unsigned int n2;
+        double *L1, *L2, *Q1, *Q2;
+        double rho = e[n1 - 1];
+
+        MPI_Recv(&n2, 1, MPI_UNSIGNED, from, 0, MPI_COMM_WORLD, &status);
+
+        SAFE_MALLOC(L1, double *, n1 * sizeof(double));
+        SAFE_MALLOC(Q1, double *, 2 * n1 * sizeof(double));
+        SAFE_MALLOC(L2, double *, n2 * sizeof(double));
+        SAFE_MALLOC(Q2, double *, 2 * n2 * sizeof(double));
+        memcpy(L1, L, n1 * sizeof(double));
+        memcpy(Q1, Q, 2 * n1 * sizeof(double));
+
+        MPI_Recv(L2, n2, MPI_DOUBLE, from, 1, MPI_COMM_WORLD, &status);
+        MPI_Recv(Q2, 2 * n2, MPI_DOUBLE, from, 2, MPI_COMM_WORLD, &status);
+
+
+        conquer(L, Q, rho, L1, Q1, n1, L2, Q2, n2);
+        n1 += n2;
+    }
+}
+
+if (0 == mpi_rank) {
+    memcpy(eigenvalues, L, n * sizeof(double));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
