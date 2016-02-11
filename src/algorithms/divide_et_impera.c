@@ -185,12 +185,6 @@ eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigne
     SAFE_MALLOC(Q1, double *, 2 * n1 * sizeof(double));
     SAFE_MALLOC(L2, double *, n2 * sizeof(double));
     SAFE_MALLOC(Q2, double *, 2 * n2 * sizeof(double));
-    SAFE_MALLOC(u1, double *, n1 * sizeof(double));
-    SAFE_MALLOC(u2, double *, n2 * sizeof(double));
-    SAFE_MALLOC(D, double *, n * sizeof(double));
-    SAFE_MALLOC(u, double *, n * sizeof(double));
-    SAFE_MALLOC(usqr, double *, n * sizeof(double));
-    SAFE_MALLOC(Qp, double *, n * n * sizeof(double));
 
 
     /* [Qi, Li] = eigen(Ti) */
@@ -203,6 +197,14 @@ eig_rec(double lambda[], double Q[], double d[], const double e[], const unsigne
     d[n1 - 1] += fabs(rho);
     d[n1]     += fabs(rho);
 
+
+    /* Conquer */
+    SAFE_MALLOC(u1, double *, n1 * sizeof(double));
+    SAFE_MALLOC(u2, double *, n2 * sizeof(double));
+    SAFE_MALLOC(D, double *, n * sizeof(double));
+    SAFE_MALLOC(u, double *, n * sizeof(double));
+    SAFE_MALLOC(usqr, double *, n * sizeof(double));
+    SAFE_MALLOC(Qp, double *, n * n * sizeof(double));
 
     /* u = [+- last row of Q1, first row of Q2] */
     for (i = 0; i < n1; i++) {
