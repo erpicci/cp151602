@@ -15,10 +15,10 @@
  */
 
 /**
- * QR iterative eigenvalue algorithm.
+ * QR iterative eigenvalue algorithm (Givens).
  * QR iterative eigenvalue algorithm proposed by Givens as described in
  * The algebraic eigenvalue problem @cite wilkinson1965 and Applied
- * Numerical Linear Algebra @cite demmel1997.
+ * Numerical Linear Algebra @cite demmel1997 .
  * @file qr_iterative.c
  * @author Erika Fabris <fabriser@dei.unipd.it>
  * @author Thomas Gagliardi <gagliard@dei.unipd.it>

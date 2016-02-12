@@ -15,7 +15,7 @@
  */
 
 /**
- * Computes eigenvalues of a symmetric tridiagonal matrix.
+ * Computes eigenvalues of a symmetric tridiagonal matrix (LAPACK).
  * Uses LAPACK library to obtain eigenvalues.
  * @note LAPACK routines are used as a black box tool
  * @file solver_lapack.c

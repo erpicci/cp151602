@@ -15,7 +15,7 @@
  */
 
 /**
- * Computes eigenvalues of a symmetric tridiagonal matrix.
+ * Computes eigenvalues of a symmetric tridiagonal matrix (divide et impera).
  * Uses the divide et impera approach.
  * @file solver_dei.c
  * @author Erika Fabris <fabriser@dei.unipd.it>

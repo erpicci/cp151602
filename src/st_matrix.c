@@ -36,7 +36,8 @@
  * @param[in]  type Type of the data (as the format string of fscanf)
  * @param[out] ptr  Pointer to which store data
  */
-#define READ(fp, type, ptr) {                               \
+#define READ(fp, type, ptr)                                 \
+{                                                           \
     int n = fscanf(fp, type, ptr);                          \
     if (1 != n) {                                           \
         fprintf(stderr, "Cannot read from file [%s:%d]\n",  \

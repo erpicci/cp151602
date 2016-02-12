@@ -15,7 +15,7 @@
  */
 
 /**
- * Computes eigenvalues of a symmetric tridiagonal matrix.
+ * Computes eigenvalues of a symmetric tridiagonal matrix (QR iterative method with Householder).
  * Uses the QR iterative approach with Householder tranformations.
  * @file solver_householder.c
  * @author Erika Fabris <fabriser@dei.unipd.it>

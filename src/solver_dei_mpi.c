@@ -15,7 +15,7 @@
  */
 
 /**
- * Computes eigenvalues of a symmetric tridiagonal matrix.
+ * Computes eigenvalues of a symmetric tridiagonal matrix (parallel divide et impera).
  * Uses the divide et impera approach with MPI.
  * @file solver_dei_mpi.c
  * @author Erika Fabris <fabriser@dei.unipd.it>

@@ -15,11 +15,11 @@
  */
 
 /**
- * QR iterative eigenvalue algorithm.
+ * QR iterative eigenvalue algorithm (Givens).
  * Interface for the QR iterative eigenvalue algorithm proposed
  * by Givens as described in The algebraic eigenvalue problem
  * @cite wilkinson1965 and Applied Numerical Linear Algebra
- * @cite demmel1997.
+ * @cite demmel1997 .
  * @file qr_iterative.h
  * @author Erika Fabris <fabriser@dei.unipd.it>
  * @author Thomas Gagliardi <gagliard@dei.unipd.it>

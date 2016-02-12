@@ -15,7 +15,7 @@
  */
 
 /**
- * Computes eigenvalues of a symmetric tridiagonal matrix.
+ * Computes eigenvalues of a symmetric tridiagonal matrix (QR iterative method with Givens).
  * Uses the QR iterative approach.
  * @file solver_qr.c
  * @author Erika Fabris <fabriser@dei.unipd.it>
