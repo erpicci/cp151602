@@ -90,6 +90,7 @@ static double secular_function(const double lambda, const void *args) {
  * @param[in] args   Arguments
  * @return Value of the first derivative at given lambda
  */
+/*
 static double secular_function_prime(const double lambda, const void *args) {
     unsigned int i;
     double value = 0.0;
@@ -101,6 +102,7 @@ static double secular_function_prime(const double lambda, const void *args) {
 
     return params->rho * value; 
 }
+*/
 
 
 
