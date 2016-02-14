@@ -85,28 +85,6 @@ static double secular_function(const double lambda, const void *args) {
 
 
 /**
- * First derivative of the function for the secular equation.
- * @param[in] lambda Independent variable
- * @param[in] args   Arguments
- * @return Value of the first derivative at given lambda
- */
-/*
-static double secular_function_prime(const double lambda, const void *args) {
-    unsigned int i;
-    double value = 0.0;
-    const struct params_s *params = (struct params_s *) args;
-
-    for (i = 0; i < params->n; ++i) {
-        value += params->usqr[i] / ((params->d[i] - lambda) * (params->d[i] - lambda));
-    }
-
-    return params->rho * value; 
-}
-*/
-
-
-
-/**
  * Merges two couples of arrays.
  * Arrays a1 and a2 are merged keeping the resulting array sorted, b1
  * and b2 are merged preserving the same order of the elements in a1
