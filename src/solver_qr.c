@@ -33,7 +33,7 @@
 
 
 /**
- * Divide et impera-based solver.
+ * QR-based solver with Givens rotations.
  * @param[in] argc ARGument Counter
  * @param[in] argv ARGument Vector
  * @retval EXIT_SUCCESS Normal termination of the program

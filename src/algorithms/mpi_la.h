@@ -18,7 +18,7 @@
  * Parallel linear algebra utilities.
  * Basic utilities to handle vector and matrix multiplication, exploiting
  * parallelism with MPI.
- * @file mpi_la.c
+ * @file mpi_la.h
  * @author Erika Fabris <fabriser@dei.unipd.it>
  * @author Thomas Gagliardi <gagliard@dei.unipd.it>
  * @author Marco Zanella <marco.zanella.9@studenti.unipd.it>

@@ -15,13 +15,13 @@
  */
 
 /**
- * QR iterative eigenvalue algorithm (Householder).
+ * QR iterative eigenvalue algorithm (Householder, parallel matrix multiplication with worker pool).
  * QR iterative eigenvalue algorithm which uses Householder
  * transformations as described in The algebraic eigenvalue problem
  * @cite wilkinson1965 and Applied Numerical Linear Algebra
  * @cite demmel1997 .
  * Matrix multiplications are parallelized with a worker pool.
- * @file qr_householder.c
+ * @file qr_householder_w.c
  * @author Erika Fabris <fabriser@dei.unipd.it>
  * @author Thomas Gagliardi <gagliard@dei.unipd.it>
  * @author Marco Zanella <marco.zanella.9@studenti.unipd.it>
